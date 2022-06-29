@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "SynthAudioSource.h"
+#include "EngineAudioSource.h"
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -65,9 +66,9 @@ private:
     int lastSynthIndex = 0;
     
     
-    tracktion_engine::Engine engine {ProjectInfo::projectName};
-    std::unique_ptr<tracktion_engine::Edit> edit;
-    
+    //tracktion_engine::Engine engine {ProjectInfo::projectName};
+    //std::unique_ptr<tracktion_engine::Edit> edit;
+    EngineAudioSource engineAudioSource;
     std::unique_ptr<juce::FileChooser> chooser;
     
     
@@ -79,7 +80,6 @@ private:
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     juce::AudioTransportSource transportSource;
     
-    tracktion_engine::HostedAudioDeviceInterface& audioInterface;
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
     

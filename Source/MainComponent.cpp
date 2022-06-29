@@ -6,16 +6,19 @@ MainComponent::MainComponent()
       keyboardComponent(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
       thumbnailCache(5),
       thumbnail(512, formatManager, thumbnailCache),
-      audioInterface(engine.getDeviceManager().getHostedAudioDeviceInterface()),
       audioMixer()
       
     
 {
-    audioMixer.addInputSource(&transportSource, true);
+    
+    //========================================================================
+    //audioMixer.addInputSource(&transportSource, true);
+    audioMixer.addInputSource(&engineAudioSource, true);
     audioMixer.addInputSource(&synthAudioSource, true);
     
     //========================================================================
-    audioInterface.initialise ({});
+
+    
     formatManager.registerBasicFormats();
     
     
@@ -192,6 +195,10 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
     {
         thumbnailChanged();
     }
+    if(source == &transportSource)
+    {
+        //transportSourceChanged();
+    }
 }
 
 void MainComponent::thumbnailChanged()
@@ -237,26 +244,27 @@ void MainComponent::openButtonClicked()
         
         if(file != juce::File{} && file.existsAsFile())
         {
-            /*
+            
             const auto editFilePath = juce::JUCEApplication::getCommandLineParameters().replace ("-NSDocumentRevisionsDebugMode YES", "").unquoted().trim();
             const juce::File editFile (editFilePath);
             
             DBG("Creating Edit From File....");
             
-            edit = tracktion_engine::createEmptyEdit(engine, editFile);
+            engineAudioSource.setEdit(tracktion_engine::createEmptyEdit(engineAudioSource.getEngine(), editFile));
+            auto& edit = engineAudioSource.getEdit();
             DBG("Edit Loaded...");
-            edit->getTransport().addChangeListener(this);
-            auto clip = loadAudioFileAsClip(*edit, file);
+            edit.getTransport().addChangeListener(this);
+            auto clip = loadAudioFileAsClip(edit, file);
             auto & transport = clip->edit.getTransport();
             DBG("Loaded Audio file as Clip");
             transport.setLoopRange(clip->getEditTimeRange());
             transport.looping = true;
             transport.position = 0.0;
             transport.play(false);
-            */
             
             
             
+            /*
             auto* reader = formatManager.createReaderFor(file);
             if(reader != nullptr)
             {
@@ -266,7 +274,7 @@ void MainComponent::openButtonClicked()
                 
                 readerSource.reset(newSource.release());
                 transportSource.start();
-            }
+            }*/
             
         }
         

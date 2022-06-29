@@ -5,6 +5,10 @@
               cppLanguageStandard="17" defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="X1leNO" name="ProjectXCloud">
     <GROUP id="{B75C724D-D118-CD5D-3E53-E16B72BA36D1}" name="Source">
+      <FILE id="dBp5aU" name="EngineAudioSource.h" compile="0" resource="0"
+            file="Source/EngineAudioSource.h"/>
+      <FILE id="hmF9QY" name="EngineAudioSource.cpp" compile="1" resource="0"
+            file="Source/EngineAudioSource.cpp"/>
       <FILE id="TjrThZ" name="SynthAudioSource.h" compile="0" resource="0"
             file="Source/SynthAudioSource.h"/>
       <FILE id="lpBPAf" name="SynthAudioSource.cpp" compile="1" resource="0"
