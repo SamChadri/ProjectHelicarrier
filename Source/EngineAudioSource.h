@@ -14,7 +14,7 @@
 class EngineAudioSource : public juce::AudioSource
 {
 public:
-    EngineAudioSource();
+    EngineAudioSource(juce::MidiKeyboardState& keyState);
     
     void prepareToPlay(int,double sampleRate) override;
     void releaseResources() override;
@@ -25,6 +25,10 @@ public:
     virtual inline tracktion_engine::Edit& getEdit();
     
     tracktion_engine::Engine& getEngine();
+    
+    tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit &edit, int index);
+    
+    void setupOutputs ();
     
     template<typename Function>
     void callFunctionOnMessageThread (Function&& func)
@@ -53,6 +57,7 @@ private:
     tracktion_engine::Engine engine {ProjectInfo::projectName};
     std::unique_ptr<tracktion_engine::Edit> edit;
     tracktion_engine::HostedAudioDeviceInterface& audioInterface;
+    juce::MidiKeyboardState& keyboardState;
     
     //
 };

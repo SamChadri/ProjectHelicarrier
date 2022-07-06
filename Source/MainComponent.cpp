@@ -6,7 +6,8 @@ MainComponent::MainComponent()
       keyboardComponent(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
       thumbnailCache(5),
       thumbnail(512, formatManager, thumbnailCache),
-      audioMixer()
+      audioMixer(),
+      engineAudioSource(keyboardState)
       
     
 {
@@ -120,7 +121,7 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
-
+/*
 void MainComponent::removeAllClips(tracktion_engine::AudioTrack &track)
 {
     auto clips = track.getClips();
@@ -156,7 +157,7 @@ tracktion_engine::WaveAudioClip::Ptr MainComponent::loadAudioFileAsClip(tracktio
     return {};
 }
 
-
+*/
 
 void MainComponent::setMidiInput(int index)
 {
@@ -211,7 +212,8 @@ void MainComponent::playButtonClicked()
 {
     if(playState == TransportState::Stopped)
     {
-        //edit->getTransport().play(false);
+        auto& edit = engineAudioSource.getEdit();
+        edit.getTransport().play(false);
         transportSource.start();
         playState = TransportState::Playing;
         DBG("Playing transport...");
@@ -225,7 +227,8 @@ void MainComponent::stopButtonClicked()
 {
     if(playState == TransportState::Playing)
     {
-        //edit->getTransport().stop(false, false);
+        auto& edit = engineAudioSource.getEdit();
+        edit.getTransport().stop(false, false);
         transportSource.stop();
         playState = TransportState::Stopped;
         DBG("Stopping trasport...");
@@ -254,13 +257,15 @@ void MainComponent::openButtonClicked()
             auto& edit = engineAudioSource.getEdit();
             DBG("Edit Loaded...");
             edit.getTransport().addChangeListener(this);
-            auto clip = loadAudioFileAsClip(edit, file);
+            auto clip = EngineHelpers::loadAudioFileAsClip(edit, file);
             auto & transport = clip->edit.getTransport();
             DBG("Loaded Audio file as Clip");
             transport.setLoopRange(clip->getEditTimeRange());
             transport.looping = true;
             transport.position = 0.0;
             transport.play(false);
+            playState = TransportState::Playing;
+            DBG("Playing audio Clip...");
             
             
             
@@ -274,6 +279,7 @@ void MainComponent::openButtonClicked()
                 
                 readerSource.reset(newSource.release());
                 transportSource.start();
+                playState = TransportState::Playing;
             }*/
             
         }

@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "SynthAudioSource.h"
 #include "EngineAudioSource.h"
+#include "../includes/common/Components.h"
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -42,11 +43,15 @@ public:
     void stopButtonClicked();
     
     //======================================================================
-    tracktion_engine::WaveAudioClip::Ptr loadAudioFileAsClip(tracktion_engine::Edit& edit, const juce::File& file);
     
-    tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit& edit, int index);
+    void createTracksAndAssignInputs();
     
-    void removeAllClips(tracktion_engine::AudioTrack& track);
+    void createOrLoadEdit();
+    //tracktion_engine::WaveAudioClip::Ptr loadAudioFileAsClip(tracktion_engine::Edit& edit, const juce::File& file);
+    
+    //tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit& edit, int index);
+    
+    //void removeAllClips(tracktion_engine::AudioTrack& track);
     
 
 private:
@@ -66,8 +71,10 @@ private:
     int lastSynthIndex = 0;
     
     
+    std::unique_ptr<EditComponent> editComponent;
     //tracktion_engine::Engine engine {ProjectInfo::projectName};
     //std::unique_ptr<tracktion_engine::Edit> edit;
+
     EngineAudioSource engineAudioSource;
     std::unique_ptr<juce::FileChooser> chooser;
     

@@ -52,6 +52,7 @@
 /* Begin PBXFileReference section */
 		00DE32A7F30BA146CADC2F45 /* include_juce_audio_devices.mm */ /* include_juce_audio_devices.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_devices.mm; path = ../../JuceLibraryCode/include_juce_audio_devices.mm; sourceTree = SOURCE_ROOT; };
 		016C0A5FAA03B185B8BCE19B /* Info-App.plist */ /* Info-App.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-App.plist"; path = "Info-App.plist"; sourceTree = SOURCE_ROOT; };
+		08CB1AF533F4C71B843EAD3A /* tracktion_graph_Dev.h */ /* tracktion_graph_Dev.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = tracktion_graph_Dev.h; path = ../../includes/common/tracktion_graph_Dev.h; sourceTree = SOURCE_ROOT; };
 		095AA77AA027CA7F5C3C60C0 /* tracktion_engine */ /* tracktion_engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tracktion_engine; path = ../../../libraries/tracktion_engine/modules/tracktion_engine; sourceTree = SOURCE_ROOT; };
 		0A379CC402F86B24A089934A /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = /Applications/JUCE/modules/juce_audio_processors; sourceTree = "<absolute>"; };
 		12FEF4314567C0C443B0D07A /* include_tracktion_engine_utils.cpp */ /* include_tracktion_engine_utils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_utils.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_utils.cpp; sourceTree = SOURCE_ROOT; };
@@ -99,7 +100,9 @@
 		B699261F7FA4F21B9B53D494 /* EngineAudioSource.cpp */ /* EngineAudioSource.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = EngineAudioSource.cpp; path = ../../Source/EngineAudioSource.cpp; sourceTree = SOURCE_ROOT; };
 		B7FCCA3E6399DA3CA7820056 /* include_tracktion_graph.cpp */ /* include_tracktion_graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_graph.cpp; path = ../../JuceLibraryCode/include_tracktion_graph.cpp; sourceTree = SOURCE_ROOT; };
 		B7FFF195C5C8AFBF9837CA98 /* include_tracktion_engine_model_1.cpp */ /* include_tracktion_engine_model_1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_model_1.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_model_1.cpp; sourceTree = SOURCE_ROOT; };
+		BB0999DAD397BBFFB5FB6242 /* Components.h */ /* Components.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Components.h; path = ../../includes/common/Components.h; sourceTree = SOURCE_ROOT; };
 		BD5BCB6DC4DD70694499E5BA /* Foundation.framework */ /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		C9DE565CB561BDACD0C46E0F /* Components.cpp */ /* Components.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Components.cpp; path = ../../includes/common/Components.cpp; sourceTree = SOURCE_ROOT; };
 		CE3881B2C8A6AB59D50BFB74 /* include_juce_audio_processors.mm */ /* include_juce_audio_processors.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors.mm; path = ../../JuceLibraryCode/include_juce_audio_processors.mm; sourceTree = SOURCE_ROOT; };
 		D744F5483CD02CECB02D22DA /* include_tracktion_engine_plugins.cpp */ /* include_tracktion_engine_plugins.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_plugins.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_plugins.cpp; sourceTree = SOURCE_ROOT; };
 		D998B986DC98E47AABA7BB3D /* SynthAudioSource.h */ /* SynthAudioSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SynthAudioSource.h; path = ../../Source/SynthAudioSource.h; sourceTree = SOURCE_ROOT; };
@@ -110,6 +113,8 @@
 		ECAFEECEF035B6590411E8A2 /* juce_audio_formats */ /* juce_audio_formats */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_formats; path = /Applications/JUCE/modules/juce_audio_formats; sourceTree = "<absolute>"; };
 		EDFBBC916539766D41D3C371 /* include_juce_osc.cpp */ /* include_juce_osc.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_osc.cpp; path = ../../JuceLibraryCode/include_juce_osc.cpp; sourceTree = SOURCE_ROOT; };
 		F0D66CBC6D6C51C099AA773E /* tracktion_graph */ /* tracktion_graph */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tracktion_graph; path = ../../../libraries/tracktion_engine/modules/tracktion_graph; sourceTree = SOURCE_ROOT; };
+		F270AEDEF5D6F43DDE9B642C /* Utilities.h */ /* Utilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Utilities.h; path = ../../includes/common/Utilities.h; sourceTree = SOURCE_ROOT; };
+		FB01069C15DE244987A0F12D /* PluginWindow.h */ /* PluginWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginWindow.h; path = ../../includes/common/PluginWindow.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +143,7 @@
 		4E0286EFFA16CA6297D96EA4 /* ProjectXCloud */ = {
 			isa = PBXGroup;
 			children = (
+				DEF8A1C82BE5136C080A3AA5,
 				BFE9D746A7CA009D12563839,
 			);
 			name = ProjectXCloud;
@@ -219,6 +225,14 @@
 			name = Source;
 			sourceTree = "<group>";
 		};
+		DEF8A1C82BE5136C080A3AA5 /* includes */ = {
+			isa = PBXGroup;
+			children = (
+				ED816E2B12075B20855140EF,
+			);
+			name = includes;
+			sourceTree = "<group>";
+		};
 		E259938DBFDF84FA151EBEB2 /* JUCE Library Code */ = {
 			isa = PBXGroup;
 			children = (
@@ -247,6 +261,18 @@
 				716D776534CE4A54730217CC,
 			);
 			name = "JUCE Library Code";
+			sourceTree = "<group>";
+		};
+		ED816E2B12075B20855140EF /* common */ = {
+			isa = PBXGroup;
+			children = (
+				C9DE565CB561BDACD0C46E0F,
+				BB0999DAD397BBFFB5FB6242,
+				FB01069C15DE244987A0F12D,
+				08CB1AF533F4C71B843EAD3A,
+				F270AEDEF5D6F43DDE9B642C,
+			);
+			name = common;
 			sourceTree = "<group>";
 		};
 		F10C638F58ED3662B04D5FFF /* Resources */ = {
