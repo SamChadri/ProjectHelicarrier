@@ -71,11 +71,17 @@ private:
     int lastSynthIndex = 0;
     
     
+    
+    
+    EngineAudioSource engineAudioSource;
+    
+    
     std::unique_ptr<EditComponent> editComponent;
+    tracktion_engine::SelectionManager selectionManager;
+    
     //tracktion_engine::Engine engine {ProjectInfo::projectName};
     //std::unique_ptr<tracktion_engine::Edit> edit;
 
-    EngineAudioSource engineAudioSource;
     std::unique_ptr<juce::FileChooser> chooser;
     
     

@@ -7,6 +7,7 @@
 */
 
 #pragma once
+#include <JuceHeader.h>
 
 namespace te = tracktion_engine;
 using namespace juce;

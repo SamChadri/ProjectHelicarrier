@@ -17,9 +17,9 @@ EngineAudioSource::EngineAudioSource(juce::MidiKeyboardState& keyState):audioInt
     param.sampleRate = 44100.0;
     param.blockSize = 512;
     param.useMidiDevices = false;
-    param.inputChannels = 2;
-    param.outputChannels = 2;
-    param.fixedBlockSize = true;// I assume this is supposed to be true, if not I have no idea what is going on then.
+    param.inputChannels = 1;
+    param.outputChannels = 1;
+    param.fixedBlockSize = false;// I assume this is supposed to be true, if not I have no idea what is going on then.
     
     audioInterface.initialise(param);
     setupOutputs();

@@ -7,7 +7,8 @@ MainComponent::MainComponent()
       thumbnailCache(5),
       thumbnail(512, formatManager, thumbnailCache),
       audioMixer(),
-      engineAudioSource(keyboardState)
+      engineAudioSource(keyboardState),
+      selectionManager(engineAudioSource.getEngine())
       
     
 {
@@ -93,10 +94,21 @@ MainComponent::MainComponent()
     
     //========================================================================
     addAndMakeVisible(keyboardComponent);
-    setAudioChannels(0, 2);
+    setAudioChannels(2, 2);
+    
+    auto* device = deviceManager.getCurrentAudioDevice();
+    auto activeInputChannels  = device->getActiveInputChannels();
+    auto activeOutputChannels = device->getActiveOutputChannels();
+    
+    
+    DBG("AUDIO INPUT CHANNELLS: " << activeInputChannels.toString(10));
+    DBG("AUDIO OUTPUT CHANELLS: " << activeOutputChannels.toString(10));
     // Make sure you set the size of the component after
     // you add any child components.
-    setSize (600, 290);
+    createOrLoadEdit();
+    
+    
+    setSize (800, 500);
     startTimer(400);
     
 
@@ -121,6 +133,8 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
+
+
 /*
 void MainComponent::removeAllClips(tracktion_engine::AudioTrack &track)
 {
@@ -158,7 +172,81 @@ tracktion_engine::WaveAudioClip::Ptr MainComponent::loadAudioFileAsClip(tracktio
 }
 
 */
+//============================================================================
+//--------------------------TRACK FUNCTIONS-----------------------------------
 
+void MainComponent::createTracksAndAssignInputs()
+{
+    auto & deviceManager = engineAudioSource.getEngine().getDeviceManager();
+    
+    for(auto i = 0; i < deviceManager.getNumWaveInDevices(); i++)
+    {
+        if(auto wid = deviceManager.getWaveInDevice(i))
+        {
+            //wid->setStereoPair(false);
+            //wid->setEndToEnd(true);
+            //wid->setEnabled(true);
+        }
+    }
+    
+    
+    auto& edit = engineAudioSource.getEdit();
+    edit.getTransport().ensureContextAllocated();
+    
+    int trackNum = 0;
+    for(auto instance: edit.getAllInputDevices())
+    {
+        if(instance->getInputDevice().getDeviceType() == tracktion_engine::InputDevice::waveDevice)
+        {
+            if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackNum))
+            {
+                instance->setTargetTrack(*track, 0, true);
+                instance->setRecordingEnabled(*track, true);
+                
+                trackNum++;
+            }
+        }
+    }
+    
+    edit.restartPlayback();
+}
+
+
+
+void MainComponent::createOrLoadEdit()
+{
+    const auto editFilePath = juce::JUCEApplication::getCommandLineParameters().replace ("-NSDocumentRevisionsDebugMode YES", "").unquoted().trim();
+    const juce::File editFile (editFilePath);
+    
+    DBG("Creating Edit From File....");
+    
+    engineAudioSource.setEdit(tracktion_engine::createEmptyEdit(engineAudioSource.getEngine(), editFile));
+    auto& edit = engineAudioSource.getEdit();
+    DBG("Edit Loaded...");
+    edit.getTransport().addChangeListener(this);
+    
+    editComponent = nullptr;
+    
+    if(!selectionManager.pasteSelected()){
+        DBG("SELECTION MANAGER VALID");
+    }
+    createTracksAndAssignInputs();
+    
+    
+    
+    tracktion_engine::EditFileOperations (edit).save(true, true, false);
+
+    
+    editComponent = std::make_unique<EditComponent> (edit, selectionManager);
+    
+    addAndMakeVisible(*editComponent);
+    resized();
+}
+
+
+//============================================================================
+
+//---------------------SYNTHESISER FUNCTIONS----------------------------------
 void MainComponent::setMidiInput(int index)
 {
     
@@ -189,6 +277,10 @@ void MainComponent::timerCallback()
     keyboardComponent.grabKeyboardFocus();
     stopTimer();
 }
+
+//============================================================================
+
+//-----------------------TRANSPORT FUNCTIONS--------------------------
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
@@ -248,15 +340,7 @@ void MainComponent::openButtonClicked()
         if(file != juce::File{} && file.existsAsFile())
         {
             
-            const auto editFilePath = juce::JUCEApplication::getCommandLineParameters().replace ("-NSDocumentRevisionsDebugMode YES", "").unquoted().trim();
-            const juce::File editFile (editFilePath);
-            
-            DBG("Creating Edit From File....");
-            
-            engineAudioSource.setEdit(tracktion_engine::createEmptyEdit(engineAudioSource.getEngine(), editFile));
             auto& edit = engineAudioSource.getEdit();
-            DBG("Edit Loaded...");
-            edit.getTransport().addChangeListener(this);
             auto clip = EngineHelpers::loadAudioFileAsClip(edit, file);
             auto & transport = clip->edit.getTransport();
             DBG("Loaded Audio file as Clip");
@@ -367,7 +451,13 @@ void MainComponent::resized()
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
     playButton.setBounds(xPos, 30, getWidth() - 100, 20);
     stopButton.setBounds(xPos, 55,getWidth() - 100, 20);
-    synthList.setBounds(200, 80, getWidth() - 210, 20);
-    midiInputList.setBounds (200, 105, getWidth() - 210, 20);
-    keyboardComponent.setBounds (10,  140, getWidth() - 20, 100);
+    synthList.setBounds(200, 220, getWidth() - 210, 20);
+    midiInputList.setBounds (200, 250, getWidth() - 210, 20);
+    keyboardComponent.setBounds (10,  280, getWidth() - 20, 100);
+    
+    if (editComponent != nullptr){
+        editComponent->setBounds (20,  100, getWidth() - 20, 100);
+        DBG("EDIT COMPONENT RESIZED");
+    }
+        
 }

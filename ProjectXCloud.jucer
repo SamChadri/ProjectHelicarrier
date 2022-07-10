@@ -6,7 +6,7 @@
   <MAINGROUP id="X1leNO" name="ProjectXCloud">
     <GROUP id="{3B553693-1C3A-4B63-6617-0852ED3F20B0}" name="includes">
       <GROUP id="{4F2EF2BD-F40F-35F4-C67F-72F6535C8483}" name="common">
-        <FILE id="I6qofA" name="Components.cpp" compile="0" resource="0" file="includes/common/Components.cpp"/>
+        <FILE id="I6qofA" name="Components.cpp" compile="1" resource="0" file="includes/common/Components.cpp"/>
         <FILE id="PWzqQ3" name="Components.h" compile="0" resource="0" file="includes/common/Components.h"/>
         <FILE id="ufrIPK" name="PluginWindow.h" compile="0" resource="0" file="includes/common/PluginWindow.h"/>
         <FILE id="C8VhVP" name="tracktion_graph_Dev.h" compile="0" resource="0"

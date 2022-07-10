@@ -29,6 +29,7 @@
 		627F41F76AED21621754127A /* include_tracktion_engine_plugins.cpp */ = {isa = PBXBuildFile; fileRef = D744F5483CD02CECB02D22DA; };
 		646466B788F028D4B5809BE2 /* CoreAudio.framework */ = {isa = PBXBuildFile; fileRef = 22D1864D353614EDBA7CD8AA; };
 		6B71F2208509C9872089CCA2 /* include_tracktion_engine_model_2.cpp */ = {isa = PBXBuildFile; fileRef = AD0BBC8F6BA1935E9C6E130B; };
+		7283A3E9AFAB0AE920B4829B /* Components.cpp */ = {isa = PBXBuildFile; fileRef = C9DE565CB561BDACD0C46E0F; };
 		74C64D9895CDC9254CEE425A /* DiscRecording.framework */ = {isa = PBXBuildFile; fileRef = 273567D69F8EC3A3683E2A69; };
 		75412C2C53BD2C97DBCB54AF /* MainComponent.cpp */ = {isa = PBXBuildFile; fileRef = 500621597DD0481371FF105E; };
 		763C85D8C9554A0C814ACE29 /* include_tracktion_graph.cpp */ = {isa = PBXBuildFile; fileRef = B7FCCA3E6399DA3CA7820056; };
@@ -369,6 +370,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7283A3E9AFAB0AE920B4829B,
 				92393907AF95626A342C4F5B,
 				61EFC2197E3AC08ECE4C2EE8,
 				8A7EE5C7FF257C30F8F579BF,
