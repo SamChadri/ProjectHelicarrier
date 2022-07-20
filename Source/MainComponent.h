@@ -9,7 +9,19 @@
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent, public juce::Timer, public juce::ChangeListener
+class ButtonLookAndFeel : public juce::LookAndFeel_V4
+{
+    Font getTextButtonFont (TextButton&, int buttonHeight) override
+    {
+        return Font ("Segoe UI Emoji", 16.0f, Font::plain);
+    }
+};
+
+
+
+
+
+class MainComponent  : public juce::AudioAppComponent, public juce::Timer, public juce::ChangeListener, public juce::MidiInputCallback, public juce::MidiKeyboardStateListener
 {
 public:
     //==============================================================================
@@ -42,6 +54,10 @@ public:
     
     void stopButtonClicked();
     
+    void recordButtonClicked();
+    
+    void newTrackButtonClicked();
+    
     //======================================================================
     
     void createTracksAndAssignInputs();
@@ -52,7 +68,14 @@ public:
     //tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit& edit, int index);
     
     //void removeAllClips(tracktion_engine::AudioTrack& track);
+    //========================================================================
+    void handleNoteOn(juce::MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override;
     
+    void handleNoteOff(juce::MidiKeyboardState*, int midiChannel, int midiNoteNumber, float /*velocity*/) override;
+    
+    void postMessageToList (const juce::MidiMessage& message, const juce::String& source);
+    
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
 
 private:
     //==============================================================================
@@ -61,6 +84,7 @@ private:
     SynthAudioSource synthAudioSource;
     juce::MidiKeyboardComponent keyboardComponent;
     
+    bool midiInputSource;
     
     juce::ComboBox midiInputList;
     juce::Label midiInputLabel;
@@ -84,10 +108,14 @@ private:
 
     std::unique_ptr<juce::FileChooser> chooser;
     
+    ButtonLookAndFeel otherLookAndFeel;
     
-    juce::TextButton playButton {"play"};
-    juce::TextButton stopButton {"stop"};
+    juce::TextButton playButton {L"▶"};
+    juce::TextButton stopButton {L"\u25FC"};//Set custom font later
+    juce::TextButton recordButton{String::fromUTF8(u8"\u26AB")};
+    juce::TextButton newTrackButton{L"\u2795"};
     juce::TextButton openButton {"open"};
+    
     
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
@@ -115,4 +143,26 @@ private:
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+};
+
+class IncomingMessageCallback : public juce::CallbackMessage
+{
+public:
+    IncomingMessageCallback(MainComponent * mcc, const MidiMessage& mm, const juce::String& s): owner(mcc), message(mm), source(s)
+    {
+        
+    }
+    
+    void messageCallback() override
+    {
+        if(owner != nullptr)
+        {
+            //owner->addMessageToList(message, source);
+        }
+    }
+    
+    
+    Component::SafePointer<MainComponent> owner;
+    juce::MidiMessage message;
+    juce::String source;
 };

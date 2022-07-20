@@ -25,7 +25,26 @@ MainComponent::MainComponent()
     
     
     playButton.onClick = [this] {playButtonClicked();};
+    playButton.setColour (juce::TextButton::buttonColourId, juce::Colours::black);
+    
     stopButton.onClick = [this] {stopButtonClicked();};
+    
+    stopButton.setLookAndFeel(&otherLookAndFeel);
+    
+    stopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::black);
+    
+    recordButton.setLookAndFeel(&otherLookAndFeel);
+    
+    recordButton.setColour(juce::TextButton::buttonColourId, juce::Colours::red);
+    
+    recordButton.onClick = [this] {recordButtonClicked();};
+    
+    
+    newTrackButton.onClick = [this] {newTrackButtonClicked();};
+    
+    newTrackButton.setLookAndFeel(&otherLookAndFeel);
+    
+    
     openButton.onClick = [this]{openButtonClicked();};
     
     //========================================================================
@@ -35,6 +54,10 @@ MainComponent::MainComponent()
     addAndMakeVisible(playButton);
     
     addAndMakeVisible(stopButton);
+    
+    addAndMakeVisible(recordButton);
+    
+    addAndMakeVisible(newTrackButton);
     
     thumbnail.addChangeListener(this);
     //=======================================================================
@@ -94,15 +117,26 @@ MainComponent::MainComponent()
     
     //========================================================================
     addAndMakeVisible(keyboardComponent);
-    setAudioChannels(2, 2);
+    setAudioChannels(1, 1);
+    //deviceManager.initialiseWithDefaultDevices(2, 2);
+    DBG("REQUESTING AUDIO PERMISIONS");
+    juce::RuntimePermissions::request (juce::RuntimePermissions::recordAudio,
+                                       [&] (bool granted) {
+        DBG("REQUESTED AUDIO PERMISIONS, GRANTED: " << (granted? "yes": "no"));
+        //deviceManager.initialise (2, 2, nullptr, true, String(), nullptr);
+        //setAudioChannels (granted ? 2 : 1, 2);
+        
+    });
     
     auto* device = deviceManager.getCurrentAudioDevice();
     auto activeInputChannels  = device->getActiveInputChannels();
     auto activeOutputChannels = device->getActiveOutputChannels();
+    auto midiDeviceCount = engineAudioSource.getEngine().getDeviceManager().getNumMidiInDevices();
     
     
     DBG("AUDIO INPUT CHANNELLS: " << activeInputChannels.toString(10));
     DBG("AUDIO OUTPUT CHANELLS: " << activeOutputChannels.toString(10));
+    DBG("MIDI INPUT DEVICES: " << midiDeviceCount);
     // Make sure you set the size of the component after
     // you add any child components.
     createOrLoadEdit();
@@ -132,6 +166,9 @@ MainComponent::~MainComponent()
 {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+    auto& edit = engineAudioSource.getEdit();
+    tracktion_engine::EditFileOperations (edit).save (true, true, false);
+    engineAudioSource.getEngine().getTemporaryFileManager().getTempDirectory().deleteRecursively();
 }
 
 
@@ -182,12 +219,29 @@ void MainComponent::createTracksAndAssignInputs()
     for(auto i = 0; i < deviceManager.getNumWaveInDevices(); i++)
     {
         if(auto wid = deviceManager.getWaveInDevice(i))
+            wid->setStereoPair (false);
+    }
+    
+    for(auto i = 0; i < deviceManager.getNumWaveInDevices(); i++)
+    {
+        if(auto wid = deviceManager.getWaveInDevice(i))
         {
             //wid->setStereoPair(false);
-            //wid->setEndToEnd(true);
-            //wid->setEnabled(true);
+            wid->setEndToEnd(true);
+            wid->setEnabled(true);
         }
     }
+    
+    for(auto i =0; i< deviceManager.getNumMidiInDevices(); i++)
+    {
+        if(auto mid = deviceManager.getMidiInDevice(i))
+        {
+            mid->setEndToEndEnabled(true);
+            mid->setEnabled(true);
+        }
+    }
+    
+    
     
     
     auto& edit = engineAudioSource.getEdit();
@@ -206,6 +260,16 @@ void MainComponent::createTracksAndAssignInputs()
                 trackNum++;
             }
         }
+        if(instance->getInputDevice().getDeviceType() == tracktion_engine::InputDevice::virtualMidiDevice)
+        {
+            if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackNum))
+            {
+                instance->setTargetTrack(*track, 1, true);
+                instance->setRecordingEnabled(*track, true);
+                
+                trackNum++;
+            }
+        }
     }
     
     edit.restartPlayback();
@@ -215,8 +279,12 @@ void MainComponent::createTracksAndAssignInputs()
 
 void MainComponent::createOrLoadEdit()
 {
-    const auto editFilePath = juce::JUCEApplication::getCommandLineParameters().replace ("-NSDocumentRevisionsDebugMode YES", "").unquoted().trim();
-    const juce::File editFile (editFilePath);
+    auto tempDirectory = File::getSpecialLocation (File::tempDirectory).getChildFile ("ProjectXCloud");
+    
+    tempDirectory.createDirectory();
+    
+    //const auto editFilePath = juce::JUCEApplication::getCommandLineParameters().replace ("-NSDocumentRevisionsDebugMode YES", "").unquoted().trim();
+    const juce::File editFile (tempDirectory.getNonexistentChildFile ("Test", ".tracktionedit", false));
     
     DBG("Creating Edit From File....");
     
@@ -226,6 +294,8 @@ void MainComponent::createOrLoadEdit()
     edit.getTransport().addChangeListener(this);
     
     editComponent = nullptr;
+    
+    //edit.playInStopEnabled = true;
     
     if(!selectionManager.pasteSelected()){
         DBG("SELECTION MANAGER VALID");
@@ -238,6 +308,9 @@ void MainComponent::createOrLoadEdit()
 
     
     editComponent = std::make_unique<EditComponent> (edit, selectionManager);
+    editComponent->getEditViewState().showMidiDevices = true;
+    editComponent->getEditViewState().showWaveDevices = false;
+    
     
     addAndMakeVisible(*editComponent);
     resized();
@@ -278,9 +351,49 @@ void MainComponent::timerCallback()
     stopTimer();
 }
 
+
+void MainComponent::handleNoteOn(juce::MidiKeyboardState *, int midiChannel, int midiNoteNumber, float velocity)
+{
+    if(!midiInputSource)
+    {
+        auto message = juce::MidiMessage::noteOn(midiChannel, midiNoteNumber, velocity);
+        message.setTimeStamp(juce::Time::getMillisecondCounterHiRes() * 0.001);
+        postMessageToList(message, "On-Screen Keyboard");
+    }
+}
+
+
+void MainComponent::handleNoteOff(juce::MidiKeyboardState *, int midiChannel, int midiNoteNumber, float)
+{
+    if(!midiInputSource)
+    {
+        auto message = juce::MidiMessage::noteOff(midiChannel, midiNoteNumber);
+        message.setTimeStamp(juce::Time::getMillisecondCounterHiRes() * 0.001);
+        postMessageToList(message, "On-Screen Keyboard");
+    }
+}
+
+
+void MainComponent::postMessageToList(const juce::MidiMessage &message, const juce::String &source)
+{
+    (new IncomingMessageCallback(this, message, source))->post();
+    
+}
+
+
+void MainComponent::handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message)
+{
+    const juce::ScopedValueSetter<bool> scopedInputFlag(midiInputSource, true);
+    
+    
+    keyboardState.processNextMidiEvent(message);
+    postMessageToList(message, source->getName());
+    
+}
+
 //============================================================================
 
-//-----------------------TRANSPORT FUNCTIONS--------------------------
+//--------------------------TRANSPORT FUNCTIONS-------------------------------
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
@@ -317,10 +430,15 @@ void MainComponent::playButtonClicked()
 
 void MainComponent::stopButtonClicked()
 {
-    if(playState == TransportState::Playing)
+    auto& edit = engineAudioSource.getEdit();
+    bool isRecording = edit.getTransport().isRecording();
+    if(playState == TransportState::Playing || isRecording)
     {
-        auto& edit = engineAudioSource.getEdit();
+        
+
         edit.getTransport().stop(false, false);
+        tracktion_engine::EditFileOperations(edit).save (true, true, false);
+        
         transportSource.stop();
         playState = TransportState::Stopped;
         DBG("Stopping trasport...");
@@ -369,6 +487,27 @@ void MainComponent::openButtonClicked()
         }
         
     });
+}
+
+
+void MainComponent::recordButtonClicked()
+{
+    auto &edit = engineAudioSource.getEdit();
+    bool isRecording = edit.getTransport().isRecording();
+    EngineHelpers::toggleRecord(engineAudioSource.getEdit());
+    DBG("TRANSPORT RECORDING: " << (isRecording ? "true" : "false"));
+    if(isRecording)
+    {
+        //Save File Here
+        tracktion_engine::EditFileOperations(edit).save(true, true, false);
+    }
+}
+
+
+void MainComponent::newTrackButtonClicked()
+{
+    auto &edit = engineAudioSource.getEdit();
+    edit.ensureNumberOfAudioTracks(tracktion_engine::getAudioTracks(edit).size() + 1);
 }
 
 //==============================================================================
@@ -446,11 +585,31 @@ void MainComponent::resized()
     // If you add any child components, this is where you should
     // update their positions.
     std::cout << "Resized \n";
+    
+    juce::FlexBox fb;
+    fb.flexWrap = juce::FlexBox::Wrap::wrap;
+    fb.justifyContent = juce::FlexBox::JustifyContent::center;
+    fb.alignContent = juce::FlexBox::AlignContent::center;
+    
+    fb.items.add(juce::FlexItem (newTrackButton).withMinWidth (50.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f,20.0f,2.0f,2.0f))
+                 );
+    
+    fb.items.add(juce::FlexItem (playButton).withMinWidth (50.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f))
+                 );
+    
+    fb.items.add(juce::FlexItem (stopButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(2.0f))
+                 );
+    fb.items.add(juce::FlexItem (recordButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(5.0f))
+                 );
+    
+    
+    fb.performLayout (getLocalBounds().removeFromTop(100));
+    
     auto buttonWidth = getWidth() - 100;
     auto xPos = (getWidth()/ 2) - (buttonWidth/2);
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
-    playButton.setBounds(xPos, 30, getWidth() - 100, 20);
-    stopButton.setBounds(xPos, 55,getWidth() - 100, 20);
+    //playButton.setBounds(xPos, 50, 100, 20);
+    //stopButton.setBounds(xPos, 50,getWidth() - 100, 20);
     synthList.setBounds(200, 220, getWidth() - 210, 20);
     midiInputList.setBounds (200, 250, getWidth() - 210, 20);
     keyboardComponent.setBounds (10,  280, getWidth() - 20, 100);

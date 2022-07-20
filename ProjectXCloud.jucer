@@ -31,7 +31,8 @@
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="1" appSandboxOptions="com.apple.security.device.microphone"
+               appSandboxInheritance="1" appSandbox="1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="MidiProject"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="MidiProject"/>
