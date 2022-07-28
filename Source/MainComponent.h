@@ -63,6 +63,10 @@ public:
     void createTracksAndAssignInputs();
     
     void createOrLoadEdit();
+    
+    tracktion_engine::MidiClip & getMidiClip(const int i);
+    
+    
     //tracktion_engine::WaveAudioClip::Ptr loadAudioFileAsClip(tracktion_engine::Edit& edit, const juce::File& file);
     
     //tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit& edit, int index);
@@ -76,13 +80,16 @@ public:
     void postMessageToList (const juce::MidiMessage& message, const juce::String& source);
     
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
+    
+    void processMidiClip(tracktion_engine::MidiClip & midiClip);
 
 private:
     //==============================================================================
     // Your private member variables go here...
     juce::MidiKeyboardState keyboardState;
-    SynthAudioSource synthAudioSource;
-    juce::MidiKeyboardComponent keyboardComponent;
+    SynthAudioSource * synthAudioSource;
+    std::unique_ptr<juce::MidiKeyboardComponent> keyboardComponent;
+    
     
     bool midiInputSource;
     
@@ -115,6 +122,9 @@ private:
     juce::TextButton recordButton{String::fromUTF8(u8"\u26AB")};
     juce::TextButton newTrackButton{L"\u2795"};
     juce::TextButton openButton {"open"};
+    
+    tracktion_engine::VirtualMidiInputDevice * virtualMidi;
+    
     
     
     juce::AudioFormatManager formatManager;

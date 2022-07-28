@@ -39,6 +39,13 @@ void EngineAudioSource::getNextAudioBlock(const juce::AudioSourceChannelInfo &bu
 {
     juce::MidiBuffer incomingMidi;
     
+    if (synthSourcePtr != nullptr && midiEnginePlayback == true)
+    {
+        synthSourcePtr->getNextAudioBlock(bufferToFill);
+    }
+    
+
+    
    // keyboardState.processNextMidiBuffer (incomingMidi, bufferToFill.startSample,bufferToFill.numSamples, true);
     
     
@@ -54,6 +61,12 @@ void EngineAudioSource::setEdit(std::unique_ptr<tracktion_engine::Edit> new_edit
 {
     edit = std::move(new_edit);
 }
+
+void EngineAudioSource::setSynthSource(SynthAudioSource *synthSource)
+{
+    synthSourcePtr = synthSource;
+}
+
 
 tracktion_engine::Engine& EngineAudioSource::getEngine()
 {

@@ -10,6 +10,7 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "SynthAudioSource.h"
 
 class EngineAudioSource : public juce::AudioSource
 {
@@ -29,6 +30,10 @@ public:
     tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit &edit, int index);
     
     void setupOutputs ();
+        
+    
+    
+    void setSynthSource(SynthAudioSource * synthSource);
     
     template<typename Function>
     void callFunctionOnMessageThread (Function&& func)
@@ -51,13 +56,17 @@ public:
     }
     
     
-    
+    bool midiEnginePlayback = false;
     //
 private:
     tracktion_engine::Engine engine {ProjectInfo::projectName};
     std::unique_ptr<tracktion_engine::Edit> edit;
     tracktion_engine::HostedAudioDeviceInterface& audioInterface;
     juce::MidiKeyboardState& keyboardState;
+    SynthAudioSource * synthSourcePtr;
+    
+    
+    
     
     //
 };

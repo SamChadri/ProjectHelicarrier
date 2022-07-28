@@ -2,8 +2,7 @@
 
 //==============================================================================
 MainComponent::MainComponent()
-    : synthAudioSource(keyboardState),
-      keyboardComponent(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
+    :
       thumbnailCache(5),
       thumbnail(512, formatManager, thumbnailCache),
       audioMixer(),
@@ -16,11 +15,11 @@ MainComponent::MainComponent()
     //========================================================================
     //audioMixer.addInputSource(&transportSource, true);
     audioMixer.addInputSource(&engineAudioSource, true);
-    audioMixer.addInputSource(&synthAudioSource, true);
+    
     
     //========================================================================
 
-    
+
     formatManager.registerBasicFormats();
     
     
@@ -116,15 +115,16 @@ MainComponent::MainComponent()
     }
     
     //========================================================================
-    addAndMakeVisible(keyboardComponent);
-    setAudioChannels(1, 1);
+    //addAndMakeVisible(keyboardComponent);
+    //keyboardState.addListener(this);
+    //setAudioChannels(1, 1);
     //deviceManager.initialiseWithDefaultDevices(2, 2);
     DBG("REQUESTING AUDIO PERMISIONS");
     juce::RuntimePermissions::request (juce::RuntimePermissions::recordAudio,
                                        [&] (bool granted) {
         DBG("REQUESTED AUDIO PERMISIONS, GRANTED: " << (granted? "yes": "no"));
         //deviceManager.initialise (2, 2, nullptr, true, String(), nullptr);
-        //setAudioChannels (granted ? 2 : 1, 2);
+        setAudioChannels (granted ? 1 : 1, 1);
         
     });
     
@@ -211,10 +211,24 @@ tracktion_engine::WaveAudioClip::Ptr MainComponent::loadAudioFileAsClip(tracktio
 */
 //============================================================================
 //--------------------------TRACK FUNCTIONS-----------------------------------
+tracktion_engine::MidiClip & MainComponent::getMidiClip(const int i)
+{
+    auto & edit = engineAudioSource.getEdit();
+    
+    auto track = tracktion_engine::getAudioTracks(edit)[i];
+    
+    return *dynamic_cast<tracktion_engine::MidiClip*>(track->getClips()[0]);
+}
+
+
+
 
 void MainComponent::createTracksAndAssignInputs()
 {
     auto & deviceManager = engineAudioSource.getEngine().getDeviceManager();
+    juce::String virtualDeviceName("SynthVirtualMidiInputDevice");
+    auto result = deviceManager.createVirtualMidiDevice(virtualDeviceName);
+    DBG(result.getErrorMessage());
     
     for(auto i = 0; i < deviceManager.getNumWaveInDevices(); i++)
     {
@@ -240,8 +254,7 @@ void MainComponent::createTracksAndAssignInputs()
             mid->setEnabled(true);
         }
     }
-    
-    
+
     
     
     auto& edit = engineAudioSource.getEdit();
@@ -252,26 +265,50 @@ void MainComponent::createTracksAndAssignInputs()
     {
         if(instance->getInputDevice().getDeviceType() == tracktion_engine::InputDevice::waveDevice)
         {
+            
             if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackNum))
             {
-                instance->setTargetTrack(*track, 0, true);
-                instance->setRecordingEnabled(*track, true);
+                //instance->setTargetTrack(*track, 0, true);
+                //instance->setRecordingEnabled(*track, true);
                 
                 trackNum++;
             }
         }
-        if(instance->getInputDevice().getDeviceType() == tracktion_engine::InputDevice::virtualMidiDevice)
+        
+        if(instance->getInputDevice().getDeviceType() == tracktion_engine::InputDevice::virtualMidiDevice && instance->getInputDevice().getName() == virtualDeviceName)
         {
+            DBG("VIRTUAL DEVICE NAME: " << (instance->getInputDevice().getName()));
             if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackNum))
             {
                 instance->setTargetTrack(*track, 1, true);
                 instance->setRecordingEnabled(*track, true);
-                
+                //track->getOutput().setOutputToTrack(track);
+                tracktion_engine::InputDevice &id = track->getMidiInputDevice();
+                edit.getEditInputDevices().getInstanceStateForInputDevice(id);
+                if(auto epc = edit.getCurrentPlaybackContext())
+                {
+                    if(auto sourceTrackInputDeviceInstance = epc->getInputFor(&id))
+                    {
+                        sourceTrackInputDeviceInstance->setTargetTrack(*track, 1, true);
+                        sourceTrackInputDeviceInstance->setRecordingEnabled(*track, true);
+                        
+                        DBG(sourceTrackInputDeviceInstance->state.toXmlString());
+                        DBG(track->state.toXmlString());
+                    }
+                }
                 trackNum++;
             }
+            virtualMidi = dynamic_cast<te::VirtualMidiInputDevice * >(&instance->getInputDevice());
+
+            
         }
     }
-    
+    synthAudioSource = new SynthAudioSource(virtualMidi->keyboardState);
+    engineAudioSource.setSynthSource(synthAudioSource);
+    keyboardComponent = std::make_unique<juce::MidiKeyboardComponent> (virtualMidi->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
+    virtualMidi->keyboardState.addListener(this);
+    addAndMakeVisible(*keyboardComponent);
+    audioMixer.addInputSource(synthAudioSource, true);
     edit.restartPlayback();
 }
 
@@ -295,7 +332,7 @@ void MainComponent::createOrLoadEdit()
     
     editComponent = nullptr;
     
-    //edit.playInStopEnabled = true;
+    edit.playInStopEnabled = true;
     
     if(!selectionManager.pasteSelected()){
         DBG("SELECTION MANAGER VALID");
@@ -324,7 +361,7 @@ void MainComponent::setMidiInput(int index)
 {
     
     auto list = juce::MidiInput::getAvailableDevices();
-    deviceManager.removeMidiInputDeviceCallback(list[lastInputIndex].identifier, synthAudioSource.getMidiCollector());
+    deviceManager.removeMidiInputDeviceCallback(list[lastInputIndex].identifier, synthAudioSource->getMidiCollector());
     
     auto newInput = list[index];
     
@@ -332,7 +369,7 @@ void MainComponent::setMidiInput(int index)
     {
         deviceManager.setMidiInputDeviceEnabled(newInput.identifier, true);
     }
-    deviceManager.addMidiInputDeviceCallback(newInput.identifier, synthAudioSource.getMidiCollector());
+    deviceManager.addMidiInputDeviceCallback(newInput.identifier, synthAudioSource->getMidiCollector());
     midiInputList.setSelectedId(index + 1, juce::dontSendNotification);
     
     lastInputIndex = index;
@@ -340,14 +377,14 @@ void MainComponent::setMidiInput(int index)
 }
 
 void MainComponent::setSynth(int index){
-    synthAudioSource.setSynthPreset(index);
+    synthAudioSource->setSynthPreset(index);
     lastSynthIndex = index;
     
 }
 
 void MainComponent::timerCallback()
 {
-    keyboardComponent.grabKeyboardFocus();
+    keyboardComponent->grabKeyboardFocus();
     stopTimer();
 }
 
@@ -359,6 +396,10 @@ void MainComponent::handleNoteOn(juce::MidiKeyboardState *, int midiChannel, int
         auto message = juce::MidiMessage::noteOn(midiChannel, midiNoteNumber, velocity);
         message.setTimeStamp(juce::Time::getMillisecondCounterHiRes() * 0.001);
         postMessageToList(message, "On-Screen Keyboard");
+        //keyboardState.processNextMidiEvent(message);
+        //keyboardState.noteOn(midiChannel, midiNoteNumber, velocity);
+        virtualMidi->handleIncomingMidiMessage(message);
+        
     }
 }
 
@@ -370,8 +411,12 @@ void MainComponent::handleNoteOff(juce::MidiKeyboardState *, int midiChannel, in
         auto message = juce::MidiMessage::noteOff(midiChannel, midiNoteNumber);
         message.setTimeStamp(juce::Time::getMillisecondCounterHiRes() * 0.001);
         postMessageToList(message, "On-Screen Keyboard");
+        //keyboardState.processNextMidiEvent(message);
+        virtualMidi->handleIncomingMidiMessage(message);
     }
 }
+
+
 
 
 void MainComponent::postMessageToList(const juce::MidiMessage &message, const juce::String &source)
@@ -385,7 +430,7 @@ void MainComponent::handleIncomingMidiMessage (juce::MidiInput* source, const ju
 {
     const juce::ScopedValueSetter<bool> scopedInputFlag(midiInputSource, true);
     
-    
+    DBG("GETTING MESSAGE");
     keyboardState.processNextMidiEvent(message);
     postMessageToList(message, source->getName());
     
@@ -412,16 +457,28 @@ void MainComponent::thumbnailChanged()
     repaint();
 }
 
+void MainComponent::processMidiClip(tracktion_engine::MidiClip & midiClip)
+{
+    for(auto i = 0 ; i < midiClip.getSequence().getSysexEvents().size(); i++)
+    {
+        auto& midiMessage = midiClip.getSequence().getSysexEvents()[0]->getMessage();
+        postMessageToList(midiMessage, "On-Screen Keyboard");
+        
+    }
+}
 
 void MainComponent::playButtonClicked()
 {
     if(playState == TransportState::Stopped)
     {
+        engineAudioSource.midiEnginePlayback = true;
+        //processMidiClip(getMidiClip(1));
+        
         auto& edit = engineAudioSource.getEdit();
         edit.getTransport().play(false);
         transportSource.start();
         playState = TransportState::Playing;
-        DBG("Playing transport...");
+        DBG("Playing transport...:");
 
     }
 
@@ -430,6 +487,7 @@ void MainComponent::playButtonClicked()
 
 void MainComponent::stopButtonClicked()
 {
+    engineAudioSource.midiEnginePlayback = false;
     auto& edit = engineAudioSource.getEdit();
     bool isRecording = edit.getTransport().isRecording();
     if(playState == TransportState::Playing || isRecording)
@@ -584,6 +642,8 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
+    
+    //Adjust the vertical position of certain items to be relative rather than absolute
     std::cout << "Resized \n";
     
     juce::FlexBox fb;
@@ -610,12 +670,12 @@ void MainComponent::resized()
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
     //playButton.setBounds(xPos, 50, 100, 20);
     //stopButton.setBounds(xPos, 50,getWidth() - 100, 20);
-    synthList.setBounds(200, 220, getWidth() - 210, 20);
-    midiInputList.setBounds (200, 250, getWidth() - 210, 20);
-    keyboardComponent.setBounds (10,  280, getWidth() - 20, 100);
+    synthList.setBounds(200, 280, getWidth() - 210, 20);
+    midiInputList.setBounds (200, 310, getWidth() - 210, 20);
+    keyboardComponent->setBounds (10,  350, getWidth() - 20, 100);
     
     if (editComponent != nullptr){
-        editComponent->setBounds (20,  100, getWidth() - 20, 100);
+        editComponent->setBounds (20,  100, getWidth() - 20, 200);
         DBG("EDIT COMPONENT RESIZED");
     }
         
