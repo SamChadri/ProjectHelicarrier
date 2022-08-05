@@ -12,7 +12,7 @@
 #include <JuceHeader.h>
 #include "SynthAudioSource.h"
 
-class EngineAudioSource : public juce::AudioSource
+class EngineAudioSource : public juce::AudioSource 
 {
 public:
     EngineAudioSource(juce::MidiKeyboardState& keyState);

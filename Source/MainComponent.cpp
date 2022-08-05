@@ -303,7 +303,15 @@ void MainComponent::createTracksAndAssignInputs()
             
         }
     }
-    synthAudioSource = new SynthAudioSource(virtualMidi->keyboardState);
+    //synthAudioSource = new SynthAudioSource(virtualMidi->keyboardState);
+    auto & engine = engineAudioSource.getEngine();
+    engine.getPluginManager().createBuiltInType<SynthAudioSource>();
+    synthAudioSource = dynamic_cast<SynthAudioSource *>(edit.getPluginCache().createNewPlugin("SynthAudioSourcePlugin", {}).getObject());
+    
+    synthAudioSource->setKeyState(&virtualMidi->keyboardState);
+    synthPluginPtr = synthAudioSource;
+    tracktion_engine::getAudioTracks(edit)[1]->pluginList.insertPlugin(synthPluginPtr, 0, nullptr);
+    
     engineAudioSource.setSynthSource(synthAudioSource);
     keyboardComponent = std::make_unique<juce::MidiKeyboardComponent> (virtualMidi->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
     virtualMidi->keyboardState.addListener(this);

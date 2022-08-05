@@ -253,26 +253,105 @@ std::map<int,std::string> SynthAudioSource::sList  = {
     {1,"Sine Wave"},
     {2,"Poly Wave"}
 };
+//===========================SYNTHAUDIO SOURCE================================
+
 
 int SynthAudioSource::SINE_PRESET = 0;
 int SynthAudioSource::POLYPHONIC_PRESET = 1;
+char * SynthAudioSource::xmlTypeName = "SynthAudioSourcePlugin";
 
 bool SynthAudioSource::sInit = false;
 
 juce::Array<SynthPresetInfo> SynthAudioSource::synthList = juce::Array<SynthPresetInfo>();
 
-SynthAudioSource::SynthAudioSource(juce::MidiKeyboardState& keyState)
-: keyboardState(keyState){
-      for(auto i= 0; i < 4; i++){
-          
-          synth.addVoice(new SineWaveVoice());
-          
-      }
-      synth.addSound(new SineWaveSound());
-      
 
+
+SynthAudioSource::SynthAudioSource(tracktion_engine::PluginCreationInfo info):Plugin(info)
+{
+    for(auto i= 0; i < 4; i++){
+        
+        synth.addVoice(new SineWaveVoice());
+        
+    }
+    synth.addSound(new SineWaveSound());
     
 }
+
+SynthAudioSource::~SynthAudioSource()
+{
+    
+}
+
+
+void SynthAudioSource::setKeyState(juce::MidiKeyboardState* keyState)
+{
+    keyboardState = keyState;
+}
+//--------------------------PLUGIN FUNCTIONS----------------------------------
+
+juce::String SynthAudioSource::getName()
+{
+    return NEEDS_TRANS("SynthAudio");
+}
+
+
+juce::String SynthAudioSource::getPluginType()
+{
+    return xmlTypeName;
+}
+
+bool SynthAudioSource::needsConstantBufferSize()
+{
+    return false;
+}
+
+juce::String SynthAudioSource::getSelectableDescription()
+{
+    return getName();
+}
+
+void SynthAudioSource::initialise(const tracktion_engine::PluginInitialisationInfo &)
+{
+    
+}
+
+
+void SynthAudioSource::deinitialise()
+{
+    
+}
+
+void SynthAudioSource::applyToBuffer(const tracktion_engine::PluginRenderContext &fc)
+{
+    juce::MidiBuffer midi;
+    if(fc.destBuffer != nullptr)
+    {
+        if(fc.bufferForMidiMessages != nullptr)
+        {
+            if(fc.bufferForMidiMessages->isAllNotesOff)
+                //turn of notes here maybe
+                DBG("SDF");
+        }
+        
+        for(auto m : *fc.bufferForMidiMessages)
+        {
+            midi.addEvent(m, m.getTimeStamp());
+        }
+        
+        synth.renderNextBlock(*fc.destBuffer, midi, fc.bufferStartSample, fc.bufferNumSamples);
+        
+    }
+    
+    
+}
+
+void SynthAudioSource::restorePluginStateFromValueTree(const juce::ValueTree &v)
+{
+    //DON'T KNOW WHAT TO DO WITH THIS FUNCTION
+}
+
+
+//----------------------------------------------------------------------------
 
 void SynthAudioSource::setUsingWaveSound(){
     synth.clearSounds();
@@ -335,7 +414,7 @@ void SynthAudioSource::getNextAudioBlock(const juce::AudioSourceChannelInfo& buf
     juce::MidiBuffer incomingMidi;
     midiCollector.removeNextBlockOfMessages(incomingMidi, bufferToFill.numSamples);
     
-    keyboardState.processNextMidiBuffer(incomingMidi, bufferToFill.startSample, bufferToFill.numSamples, true);
+    keyboardState->processNextMidiBuffer(incomingMidi, bufferToFill.startSample, bufferToFill.numSamples, true);
     
     
     synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, bufferToFill.startSample, bufferToFill.numSamples);

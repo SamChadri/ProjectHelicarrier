@@ -87,6 +87,7 @@ private:
     //==============================================================================
     // Your private member variables go here...
     juce::MidiKeyboardState keyboardState;
+    SynthAudioSource::Ptr synthPluginPtr;
     SynthAudioSource * synthAudioSource;
     std::unique_ptr<juce::MidiKeyboardComponent> keyboardComponent;
     
