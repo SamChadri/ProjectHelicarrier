@@ -243,7 +243,7 @@ private:
     double tailOff = 0;
     double level = 0;
     
-    static constexpr auto maxLevel = 0.05;
+    static constexpr auto maxLevel = 0.45;
     static constexpr auto maxLevelDb = 31.0;
     static constexpr auto smoothingLengthInSeconds = 0.01;
     
@@ -324,6 +324,7 @@ void SynthAudioSource::deinitialise()
 void SynthAudioSource::applyToBuffer(const tracktion_engine::PluginRenderContext &fc)
 {
     juce::MidiBuffer midi;
+    
     if(fc.destBuffer != nullptr)
     {
         if(fc.bufferForMidiMessages != nullptr)
@@ -417,8 +418,11 @@ void SynthAudioSource::getNextAudioBlock(const juce::AudioSourceChannelInfo& buf
     keyboardState->processNextMidiBuffer(incomingMidi, bufferToFill.startSample, bufferToFill.numSamples, true);
     
     
+    /*
+     //SEEMS LIKE IT WAS RENDERING THE NEXT BLOCK TWICE SINCE I THINK THEY BOTH DO THE SAME THING
+     //NOTE: WATCH TO SEE IF THIS BECOMES A PROBLEM LATER ON
     synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, bufferToFill.startSample, bufferToFill.numSamples);
-    
+    */
 }
 
 juce::MidiMessageCollector* SynthAudioSource::getMidiCollector()

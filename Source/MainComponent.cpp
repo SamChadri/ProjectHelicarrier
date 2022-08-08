@@ -75,8 +75,10 @@ MainComponent::MainComponent()
     
     for(auto synth: synthPresets)
     {
+        DBG("SYNTH NAME: " << synth.name);
         synthNames.add(synth.name);
     }
+    //synthNames.add("PolySynth");
     synthList.addItemList(synthNames, 1);
     synthList.onChange = [this] {setSynth(synthList.getSelectedItemIndex());};
         
@@ -678,9 +680,9 @@ void MainComponent::resized()
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
     //playButton.setBounds(xPos, 50, 100, 20);
     //stopButton.setBounds(xPos, 50,getWidth() - 100, 20);
-    synthList.setBounds(200, 280, getWidth() - 210, 20);
-    midiInputList.setBounds (200, 310, getWidth() - 210, 20);
-    keyboardComponent->setBounds (10,  350, getWidth() - 20, 100);
+    synthList.setBounds(200, 310, getWidth() - 210, 20);
+    midiInputList.setBounds (200, 340, getWidth() - 210, 20);
+    keyboardComponent->setBounds (10,  370, getWidth() - 20, 100);
     
     if (editComponent != nullptr){
         editComponent->setBounds (20,  100, getWidth() - 20, 200);
