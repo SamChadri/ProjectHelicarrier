@@ -7,11 +7,11 @@
 */
 
 #pragma once
-
+#include "BinaryData.cpp"
 namespace Icons
 {
-    Path getFolderPath();
-    Path getDicePath();
+    juce::Path getFolderPath();
+    juce::Path getDicePath();
 }
 
 namespace DemoBinaryData

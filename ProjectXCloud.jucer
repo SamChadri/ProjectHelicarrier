@@ -6,6 +6,8 @@
   <MAINGROUP id="X1leNO" name="ProjectXCloud">
     <GROUP id="{3B553693-1C3A-4B63-6617-0852ED3F20B0}" name="includes">
       <GROUP id="{4F2EF2BD-F40F-35F4-C67F-72F6535C8483}" name="common">
+        <FILE id="KvF3yd" name="BinaryData.cpp" compile="0" resource="0" file="includes/common/BinaryData.cpp"/>
+        <FILE id="smHUku" name="BinaryData.h" compile="0" resource="0" file="includes/common/BinaryData.h"/>
         <FILE id="I6qofA" name="Components.cpp" compile="1" resource="0" file="includes/common/Components.cpp"/>
         <FILE id="PWzqQ3" name="Components.h" compile="0" resource="0" file="includes/common/Components.h"/>
         <FILE id="ufrIPK" name="PluginWindow.h" compile="0" resource="0" file="includes/common/PluginWindow.h"/>
@@ -15,6 +17,7 @@
       </GROUP>
     </GROUP>
     <GROUP id="{B75C724D-D118-CD5D-3E53-E16B72BA36D1}" name="Source">
+      <FILE id="adxGQf" name="StepEditor.h" compile="0" resource="0" file="Source/StepEditor.h"/>
       <FILE id="dBp5aU" name="EngineAudioSource.h" compile="0" resource="0"
             file="Source/EngineAudioSource.h"/>
       <FILE id="hmF9QY" name="EngineAudioSource.cpp" compile="1" resource="0"

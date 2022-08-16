@@ -56,6 +56,7 @@
 		08CB1AF533F4C71B843EAD3A /* tracktion_graph_Dev.h */ /* tracktion_graph_Dev.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = tracktion_graph_Dev.h; path = ../../includes/common/tracktion_graph_Dev.h; sourceTree = SOURCE_ROOT; };
 		095AA77AA027CA7F5C3C60C0 /* tracktion_engine */ /* tracktion_engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tracktion_engine; path = ../../../libraries/tracktion_engine/modules/tracktion_engine; sourceTree = SOURCE_ROOT; };
 		0A379CC402F86B24A089934A /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = /Applications/JUCE/modules/juce_audio_processors; sourceTree = "<absolute>"; };
+		0B078B566B32FDABEBCDA2A6 /* BinaryData.cpp */ /* BinaryData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryData.cpp; path = ../../includes/common/BinaryData.cpp; sourceTree = SOURCE_ROOT; };
 		12FEF4314567C0C443B0D07A /* include_tracktion_engine_utils.cpp */ /* include_tracktion_engine_utils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_utils.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_utils.cpp; sourceTree = SOURCE_ROOT; };
 		13E04A591A82573C03238C1C /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = /Applications/JUCE/modules/juce_audio_devices; sourceTree = "<absolute>"; };
 		14069D235120475D8AD57F03 /* EngineAudioSource.h */ /* EngineAudioSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = EngineAudioSource.h; path = ../../Source/EngineAudioSource.h; sourceTree = SOURCE_ROOT; };
@@ -78,7 +79,9 @@
 		6249B13931CBF0C5034DEB99 /* juce_osc */ /* juce_osc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_osc; path = /Applications/JUCE/modules/juce_osc; sourceTree = "<absolute>"; };
 		69FB356A5F39295BF50AC663 /* juce_gui_extra */ /* juce_gui_extra */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_extra; path = /Applications/JUCE/modules/juce_gui_extra; sourceTree = "<absolute>"; };
 		6D3C14569470DE36BAD597EE /* include_juce_events.mm */ /* include_juce_events.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_events.mm; path = ../../JuceLibraryCode/include_juce_events.mm; sourceTree = SOURCE_ROOT; };
+		6E23A64FC20DBC6F1ECF14CF /* BinaryData.h */ /* BinaryData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BinaryData.h; path = ../../includes/common/BinaryData.h; sourceTree = SOURCE_ROOT; };
 		716D776534CE4A54730217CC /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
+		74943BBC4FAEDE0E60AFF19A /* StepEditor.h */ /* StepEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = StepEditor.h; path = ../../Source/StepEditor.h; sourceTree = SOURCE_ROOT; };
 		79810A910C738E90468B42EB /* Cocoa.framework */ /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		7D25B556E98CFED68EBFB99F /* juce_audio_basics */ /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = /Applications/JUCE/modules/juce_audio_basics; sourceTree = "<absolute>"; };
 		80303C6DC03A9A57F3F9B412 /* include_tracktion_engine_airwindows.cpp */ /* include_tracktion_engine_airwindows.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_airwindows.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_airwindows.cpp; sourceTree = SOURCE_ROOT; };
@@ -203,6 +206,7 @@
 		BFE9D746A7CA009D12563839 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				74943BBC4FAEDE0E60AFF19A,
 				14069D235120475D8AD57F03,
 				B699261F7FA4F21B9B53D494,
 				D998B986DC98E47AABA7BB3D,
@@ -268,6 +272,8 @@
 		ED816E2B12075B20855140EF /* common */ = {
 			isa = PBXGroup;
 			children = (
+				0B078B566B32FDABEBCDA2A6,
+				6E23A64FC20DBC6F1ECF14CF,
 				C9DE565CB561BDACD0C46E0F,
 				BB0999DAD397BBFFB5FB6242,
 				FB01069C15DE244987A0F12D,

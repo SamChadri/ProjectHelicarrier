@@ -4,6 +4,7 @@
 #include "SynthAudioSource.h"
 #include "EngineAudioSource.h"
 #include "../includes/common/Components.h"
+#include "StepEditor.h"
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -58,6 +59,8 @@ public:
     
     void newTrackButtonClicked();
     
+    
+    void deleteButtonClicked();
     //======================================================================
     
     void createTracksAndAssignInputs();
@@ -123,6 +126,7 @@ private:
     juce::TextButton recordButton{String::fromUTF8(u8"\u26AB")};
     juce::TextButton newTrackButton{L"\u2795"};
     juce::TextButton openButton {"open"};
+    juce::TextButton deleteButton {L"\u274C"};
     
     tracktion_engine::VirtualMidiInputDevice * virtualMidi;
     
@@ -149,7 +153,33 @@ private:
     TransportState playState {TransportState::Stopped};
     
     
+    //========================================================================
     
+    juce::TextButton stepSettingsButton {"Settings"};
+    
+    juce::TextButton stepPlayPauseButton {"Play"};
+    
+    juce::TextButton stepRandomizeButton {"Randomise"};
+    
+    juce::TextButton stepClearButton {"Clear"};
+    
+    juce::Slider tempoSlider;
+    
+    std::unique_ptr<StepEditor> stepEditor;
+    
+    
+    
+    //========================================================================
+    
+    tracktion_engine::StepClip::Ptr createStepClip();
+    
+    Array<File> createSampleFiles();
+    
+    void createSamplerPlugin(Array<File> defaultSampleFiles);
+    
+    tracktion_engine::StepClip::Ptr getClip();
+    
+    void showStepSequencer();
     
 
 

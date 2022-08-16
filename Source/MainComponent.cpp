@@ -22,7 +22,7 @@ MainComponent::MainComponent()
 
     formatManager.registerBasicFormats();
     
-    
+
     playButton.onClick = [this] {playButtonClicked();};
     playButton.setColour (juce::TextButton::buttonColourId, juce::Colours::black);
     
@@ -46,6 +46,11 @@ MainComponent::MainComponent()
     
     openButton.onClick = [this]{openButtonClicked();};
     
+    
+    deleteButton.onClick = [this] {deleteButtonClicked();};
+    
+    deleteButton.setLookAndFeel(&otherLookAndFeel);
+    
     //========================================================================
     addAndMakeVisible(openButton);
     
@@ -57,6 +62,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(recordButton);
     
     addAndMakeVisible(newTrackButton);
+    
+    addAndMakeVisible(deleteButton);
     
     thumbnail.addChangeListener(this);
     //=======================================================================
@@ -142,6 +149,22 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     createOrLoadEdit();
+    
+    //------------------------------------------------------------------------
+    
+    createStepClip();
+    createSamplerPlugin(createSampleFiles());
+    
+    stepEditor = std::make_unique<StepEditor>(*getClip());
+    
+    addAndMakeVisible(stepSettingsButton);
+    addAndMakeVisible(stepPlayPauseButton);
+    addAndMakeVisible(stepRandomizeButton);
+    addAndMakeVisible(stepClearButton);
+    addAndMakeVisible(tempoSlider);
+    addAndMakeVisible(stepEditor.get());
+    
+    showStepSequencer();
     
     
     setSize (800, 500);
@@ -270,8 +293,8 @@ void MainComponent::createTracksAndAssignInputs()
             
             if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackNum))
             {
-                //instance->setTargetTrack(*track, 0, true);
-                //instance->setRecordingEnabled(*track, true);
+                instance->setTargetTrack(*track, 0, true);
+                instance->setRecordingEnabled(*track, true);
                 
                 trackNum++;
             }
@@ -578,6 +601,119 @@ void MainComponent::newTrackButtonClicked()
     edit.ensureNumberOfAudioTracks(tracktion_engine::getAudioTracks(edit).size() + 1);
 }
 
+
+void MainComponent::deleteButtonClicked()
+{
+    auto selection = selectionManager.getSelectedObject(0);
+    if(auto clip = dynamic_cast<tracktion_engine::Clip *>(selection))
+    {
+        clip->removeFromParentTrack();
+    }
+    else if(auto track = dynamic_cast<tracktion_engine::Track *>(selection))
+    {
+        if(!(track->isMasterTrack() || track->isMarkerTrack() || track->isTempoTrack() || track->isChordTrack()))
+        {
+            engineAudioSource.getEdit().deleteTrack(track);
+        }
+    }
+}
+
+//=======================STEP-SEQUENCER-FUNCTIONS=============================
+tracktion_engine::StepClip::Ptr MainComponent::getClip()
+{
+    
+    if(auto track = EngineHelpers::getOrInsertAudioTrackAt(engineAudioSource.getEdit(), 0))
+    {
+        if(auto clip = dynamic_cast<tracktion_engine::StepClip*>(track->getClips()[0]))
+        {
+            return *clip;
+        }
+    }
+    return {};
+
+}
+
+
+tracktion_engine::StepClip::Ptr MainComponent::createStepClip()
+{
+    //EDIT: change which track you actually might want to use
+    auto & edit = engineAudioSource.getEdit();
+    if(auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+    {
+        const tracktion_engine::EditTimeRange editTimeRange(0,edit.tempoSequence.barsBeatsToTime ({ 1, 0.0 }));
+        track->insertNewClip(tracktion_engine::TrackItem::Type::step, "Step Clip", editTimeRange, nullptr);
+        if(auto stepClip = getClip())
+        {
+            return EngineHelpers::loopAroundClip(*stepClip);
+        }
+    }
+    return {};
+}
+
+
+Array<File> MainComponent::createSampleFiles()
+{
+    Array<File> files;
+    const auto destDir = engineAudioSource.getEdit().getTempDirectory(true);
+    
+    jassert(destDir != File());
+    
+    using namespace DemoBinaryData;
+    
+    for(int i =0; i < tracktion_engine::TracktionBinaryData::namedResourceListSize; ++i)
+    {
+        const auto f = destDir.getChildFile(originalFilenames[i]);
+        
+        int dataSizeInBytes = 0;
+        const char* data = getNamedResource(namedResourceList[i], dataSizeInBytes);
+        
+        jassert(data != nullptr);
+        f.replaceWithData(data, dataSizeInBytes);
+        files.add(f);
+    }
+    return files;
+    
+}
+
+void MainComponent::createSamplerPlugin(Array<File> defaultSampleFiles)
+{
+    if(auto stepClip = getClip())
+    {
+        if(auto sampler = dynamic_cast<tracktion_engine::SamplerPlugin*>(engineAudioSource.getEdit().getPluginCache().createNewPlugin(tracktion_engine::SamplerPlugin::xmlTypeName, {}).get()))
+        {
+            stepClip->getTrack()->pluginList.insertPlugin(*sampler, 0, nullptr);
+            int channelCount = 0;
+            
+            for(auto channel : stepClip->getChannels())
+            {
+                const auto error = sampler->addSound(defaultSampleFiles[channelCount++].getFullPathName(), channel->name.get(), 0.0, 0.0, 1.0f);
+                sampler->setSoundParams(sampler->getNumSounds() - 1, channel->noteNumber, channel->noteNumber, channel->noteNumber);
+                jassert(error.isEmpty());
+                
+                for(auto &pattern :stepClip->getPatterns())
+                    pattern.randomiseChannel(channel->getIndex());
+            }
+            
+        }
+        else
+        {
+            jassertfalse; //StepClip not created...
+        }
+    }
+}
+
+
+void MainComponent::showStepSequencer()
+{
+    DialogWindow::LaunchOptions o;
+    o.dialogTitle = TRANS("Audio Settings");
+    o.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour (ResizableWindow::backgroundColourId);
+    o.content.setOwned (stepEditor.get());
+    o.content->setSize (400, 600);
+    o.launchAsync();
+    
+    resized();
+}
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
@@ -656,25 +792,38 @@ void MainComponent::resized()
     //Adjust the vertical position of certain items to be relative rather than absolute
     std::cout << "Resized \n";
     
-    juce::FlexBox fb;
-    fb.flexWrap = juce::FlexBox::Wrap::wrap;
-    fb.justifyContent = juce::FlexBox::JustifyContent::center;
-    fb.alignContent = juce::FlexBox::AlignContent::center;
+    juce::FlexBox audioControlFb;
+    juce::FlexBox managementControlFb;
     
-    fb.items.add(juce::FlexItem (newTrackButton).withMinWidth (50.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f,20.0f,2.0f,2.0f))
+    
+    managementControlFb.flexWrap = juce::FlexBox::Wrap::wrap;
+    managementControlFb.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    managementControlFb.alignContent = juce::FlexBox::AlignContent::center;
+    
+    audioControlFb.flexWrap = juce::FlexBox::Wrap::wrap;
+    audioControlFb.justifyContent = juce::FlexBox::JustifyContent::center;
+    audioControlFb.alignContent = juce::FlexBox::AlignContent::center;
+    
+    
+    managementControlFb.items.add(juce::FlexItem (newTrackButton).withMinWidth (40.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f,2.0f,2.0f,30.0f)));
+    
+    managementControlFb.items.add(juce::FlexItem(deleteButton).withMinWidth(40.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(2.0f,30.0f,2.0f,2.0f)));
+    
+    
+    
+    
+    audioControlFb.items.add(juce::FlexItem (playButton).withMinWidth (50.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f))
                  );
     
-    fb.items.add(juce::FlexItem (playButton).withMinWidth (50.0f).withMinHeight (25.0f).withMargin(juce::FlexItem::Margin(2.0f))
+    audioControlFb.items.add(juce::FlexItem (stopButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(2.0f))
                  );
     
-    fb.items.add(juce::FlexItem (stopButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(2.0f))
-                 );
-    fb.items.add(juce::FlexItem (recordButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(5.0f))
+    audioControlFb.items.add(juce::FlexItem (recordButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(5.0f))
                  );
     
     
-    fb.performLayout (getLocalBounds().removeFromTop(100));
-    
+    audioControlFb.performLayout (getLocalBounds().removeFromTop(100));
+    managementControlFb.performLayout(getLocalBounds().removeFromTop(150));
     auto buttonWidth = getWidth() - 100;
     auto xPos = (getWidth()/ 2) - (buttonWidth/2);
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
