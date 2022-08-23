@@ -7,7 +7,8 @@ MainComponent::MainComponent()
       thumbnail(512, formatManager, thumbnailCache),
       audioMixer(),
       engineAudioSource(keyboardState),
-      selectionManager(engineAudioSource.getEngine())
+      selectionManager(engineAudioSource.getEngine()),
+      stepWindow(engineAudioSource)
       
     
 {
@@ -151,7 +152,7 @@ MainComponent::MainComponent()
     createOrLoadEdit();
     
     //------------------------------------------------------------------------
-    
+    /*
     createStepClip();
     createSamplerPlugin(createSampleFiles());
     
@@ -163,8 +164,10 @@ MainComponent::MainComponent()
     addAndMakeVisible(stepClearButton);
     addAndMakeVisible(tempoSlider);
     addAndMakeVisible(stepEditor.get());
+    */
     
-    showStepSequencer();
+    stepWindow.initalise();
+    //showStepSequencer();
     
     
     setSize (800, 500);
@@ -627,6 +630,7 @@ tracktion_engine::StepClip::Ptr MainComponent::getClip()
         if(auto clip = dynamic_cast<tracktion_engine::StepClip*>(track->getClips()[0]))
         {
             return *clip;
+            
         }
     }
     return {};
@@ -705,13 +709,23 @@ void MainComponent::createSamplerPlugin(Array<File> defaultSampleFiles)
 
 void MainComponent::showStepSequencer()
 {
-    DialogWindow::LaunchOptions o;
-    o.dialogTitle = TRANS("Audio Settings");
+    topWindow = new ResizableWindow("Step Sequencer",true);
+    topWindow->addToDesktop();
+    topWindow->centreWithSize(400, 600);
+    topWindow->setContentOwned(&stepWindow, false);
+    topWindow->setBackgroundColour(LookAndFeel::getDefaultLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+    topWindow->setResizable(true, true);
+    topWindow->setUsingNativeTitleBar (true);
+    //topWindow->centreAroundComponent(&stepWindow, 400, 600);
+    topWindow->setVisible(true);
+    topWindow->toFront(true);
+    //topWindow->setAlwaysOnTop(true);
+    /*o.dialogTitle = TRANS("Audio Settings");
     o.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour (ResizableWindow::backgroundColourId);
-    o.content.setOwned (stepEditor.get());
+    o.content.setOwned (&stepWindow);
     o.content->setSize (400, 600);
     o.launchAsync();
-    
+    */
     resized();
 }
 //==============================================================================

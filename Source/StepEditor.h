@@ -83,7 +83,6 @@ struct StepEditor: public juce::Component, private tracktion_engine::SelectableL
             channelR.setVerticalRange (getChannelYRange (c->channelIndex));
             c->setBounds (channelR.getSmallestIntegerContainer());
         }
-
         patternEditor.setBounds (r);
     }
     
@@ -388,6 +387,9 @@ private:
     
     OwnedArray<ChannelConfig> channelConfigs;
     PatternEditor patternEditor {*this};
+    
+    
+    TextButton stepPlayButton {"Play"};
     
     int yToChannel (float y) const
     {

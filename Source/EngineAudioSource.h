@@ -25,6 +25,8 @@ public:
     
     virtual inline tracktion_engine::Edit& getEdit();
     
+    tracktion_engine::Edit& getStepEdit();
+    
     tracktion_engine::Engine& getEngine();
     
     tracktion_engine::AudioTrack* getOrInsertAudioTrackAt(tracktion_engine::Edit &edit, int index);
@@ -61,6 +63,7 @@ public:
 private:
     tracktion_engine::Engine engine {ProjectInfo::projectName};
     std::unique_ptr<tracktion_engine::Edit> edit;
+    tracktion_engine::Edit stepEdit { engine, tracktion_engine::createEmptyEdit (engine), tracktion_engine::Edit::forEditing, nullptr, 0};
     tracktion_engine::HostedAudioDeviceInterface& audioInterface;
     juce::MidiKeyboardState& keyboardState;
     SynthAudioSource * synthSourcePtr;

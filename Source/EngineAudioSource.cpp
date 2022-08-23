@@ -53,6 +53,11 @@ void EngineAudioSource::getNextAudioBlock(const juce::AudioSourceChannelInfo &bu
     audioInterface.processBlock(*bufferToFill.buffer, incomingMidi);
 }
 
+tracktion_engine::Edit & EngineAudioSource::getStepEdit()
+{
+    return stepEdit;
+}
+
 inline tracktion_engine::Edit& EngineAudioSource::getEdit(){
     return  *edit;
 }

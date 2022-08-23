@@ -65,7 +65,8 @@ public:
                               DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+            auto mainComponent = new MainComponent();
+            setContentOwned (mainComponent, true);
 
            #if JUCE_IOS || JUCE_ANDROID
             setFullScreen (true);
@@ -75,6 +76,7 @@ public:
            #endif
 
             setVisible (true);
+            mainComponent->showStepSequencer();
         }
 
         void closeButtonPressed() override
