@@ -27,9 +27,18 @@ public:
         
         addAndMakeVisible(stepPlayPauseButton);
         addAndMakeVisible(stepConfirmButton);
+        addAndMakeVisible(stepBarInput);
+        
         stepPlayPauseButton.setLookAndFeel(&otherLookAndFeel);
         stepPlayPauseButton.onClick = [this] {playPlauseButtonClicked();};
         stepConfirmButton.onClick = [this] {confirmButtonClicked();};
+        
+        
+        stepBarInput.setText("1");
+        stepBarInput.setInputRestrictions(2,"0123456789");
+        stepBarInput.onTextChange = [this] {stepCountChanged();};
+        
+        
         
         
         
@@ -55,6 +64,12 @@ public:
         
         
         addAndMakeVisible(stepEditor.get());
+        viewPort.setViewedComponent(stepEditor.get(), false);
+        addAndMakeVisible(&viewPort);
+        setSize(400,600);
+        configWidth = stepEditor->getWidth() - stepEditor->getPatternWidth();
+        stepInitWidth = stepEditor->getPatternWidth();;
+
         
     }
     
@@ -89,7 +104,7 @@ public:
             auto  sequence = stepClip->getPatternSequence();
             if(auto track = EngineHelpers::getOrInsertAudioTrackAt(engineAudioSource.getEdit(), 2))
             {
-                const tracktion_engine::EditTimeRange editTimeRange(0,(engineAudioSource.getEdit().tempoSequence.barsBeatsToTime ({ 1, 0.0 })));
+                const tracktion_engine::EditTimeRange editTimeRange(0,(engineAudioSource.getEdit().tempoSequence.barsBeatsToTime ({ barCount, 0.0 })));
                 track->insertNewClip(tracktion_engine::TrackItem::Type::step, "Step Clip", editTimeRange, nullptr);
                 if(auto track = EngineHelpers::getOrInsertAudioTrackAt(engineAudioSource.getEdit(), 2))
                 {
@@ -111,13 +126,6 @@ public:
                                 
                                 clip->insertPattern(stepClip->getPattern(channel->getIndex()),channel->getIndex());
                                 
-                                /*
-                                for(auto &pattern :clip->getPatterns())
-                                {
-                                    pattern.randomiseChannel(channel->getIndex());
-                                    pattern.
-                                }*/
-
     
                             }
                             DBG("STEP CLIP CHANNEL COUNT : " << channelCount);
@@ -126,26 +134,54 @@ public:
                     }
                 }
                                 
-
             }
             
-            
-            
-            
         }
-        /*
-        auto  sequence = stepClip->getPatternSequence();
-        if(auto track = EngineHelpers::getOrInsertAudioTrackAt(engineAudioSource.getEdit(), 0))
+
+    }
+    
+    void stepCountChanged()
+    {
+        barCount = stepBarInput.getText().getIntValue();
+        if(barCount > 0)
         {
-            const tracktion_engine::EditTimeRange editTimeRange(0,(engineAudioSource.getEdit().tempoSequence.barsBeatsToTime ({ 1, 0.0 })));
-
-            if(auto newClip = dynamic_cast<tracktion_engine::StepClip*>                 (track->insertNewClip(tracktion_engine::TrackItem::Type::step, "Step Clip", editTimeRange, nullptr)))
+            if(auto stepClip = getClip())
             {
-                newClip->setPatternSequence(sequence);
+                auto timeDuration = engineAudioSource.getEdit().tempoSequence.barsBeatsToTime({barCount,0});
                 
+                auto numNotes = 16 * barCount;
+                
+                for(auto pattern : stepClip->getPatterns())
+                {
+                    pattern.setNumNotes(numNotes);
+                }
+                stepClip->setLength(timeDuration,true);
+                EngineHelpers::loopAroundClip(*stepClip);
+                stepPlayPauseButton.setButtonText(L"\u007C \u007C");
+                if(barCount != 1)
+                {
+
+                    stepResize = true;
+                    auto diffSpace = 400 - (stepInitWidth + configWidth);
+                    auto newStepWidth  = (stepInitWidth * barCount) + configWidth; //Change this so it varies per bars
+                    auto windowWidth = ((stepInitWidth * 2) + configWidth) + diffSpace;
+                    stepEditor->setBounds(10, 70, newStepWidth, 300);
+                    setSize(windowWidth,600);
+                    resized();
+
+                    
+                }
+                else
+                {
+                    setSize(400,600);
+                    stepResize = false;
+                    stepEditor->setBounds(10, 70, getWidth() - 20, 300);
+                    
+                }
+                stepEditor->updatePaths();
             }
         }
-         */
+
     }
     
     void paint(Graphics&) override
@@ -166,10 +202,18 @@ public:
         
         stepAudioControlFb.items.add(juce::FlexItem(stepConfirmButton).withMinWidth(40.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(2.0f,2.0f,2.0f,2.0f)));
         
-        stepAudioControlFb.performLayout(getLocalBounds().removeFromTop(30));
+        stepAudioControlFb.performLayout(getLocalBounds().removeFromTop(60));
         
+        stepBarInput.setBounds(getWidth() - 30, 30, 20, 25);
+        viewPort.setBounds(10, 70, getWidth()- 10, 300);
+        //viewPort.setBoundsRelative(0.00f, 0.1f, 1.0f, 1.0f);
         //stepPlayPauseButton.setBounds(10, 20, getWidth()-20, 25);
-        stepEditor->setBounds(10, 50, getWidth() - 20, 300);
+        if(stepResize == false)
+        {
+            DBG("STEP RESIZE FALSE");
+            stepEditor->setBounds(10, 70, getWidth() - 20, 300);
+        }
+        
     }
     
     
@@ -188,6 +232,10 @@ private:
     
     juce::TextButton stepClearButton {"Clear"};
     
+    juce::TextEditor stepBarInput;
+    
+    juce::String stepBarCount;
+    
     juce::Slider tempoSlider;
     
     std::unique_ptr<StepEditor> stepEditor;
@@ -197,6 +245,14 @@ private:
     EngineAudioSource& engineAudioSource;
     
     Array<File> sampleFiles;
+    
+    Viewport viewPort;
+    
+    bool stepResize = false;
+    int stepInitWidth;
+    int configWidth;
+    
+    int barCount;
     
     
     tracktion_engine::StepClip::Ptr createStepClip()
@@ -255,9 +311,13 @@ private:
                     jassert(error.isEmpty());
                     
                     for(auto &pattern :stepClip->getPatterns())
+                    {
                         pattern.randomiseChannel(channel->getIndex());
+                    }
+                        
                 }
                 DBG("STEP CLIP CHANNEL COUNT : " << channelCount);
+                DBG("PATTERN NOTE COUNT: " <<  stepClip->getPatternSequence()[0]->getPattern().getNumNotes());
                 
             }
         }

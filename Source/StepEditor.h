@@ -72,6 +72,16 @@ struct StepEditor: public juce::Component, private tracktion_engine::SelectableL
         
     }
     
+    void updatePaths()
+    {
+        patternEditor.resized();
+    }
+    
+    int getPatternWidth()
+    {
+        return patternEditor.getWidth();
+    }
+    
     void resized()override
     {
         auto r = getLocalBounds();

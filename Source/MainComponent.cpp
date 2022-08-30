@@ -712,7 +712,7 @@ void MainComponent::showStepSequencer()
     topWindow = new ResizableWindow("Step Sequencer",true);
     topWindow->addToDesktop();
     topWindow->centreWithSize(400, 600);
-    topWindow->setContentOwned(&stepWindow, false);
+    topWindow->setContentOwned(&stepWindow, true);
     topWindow->setBackgroundColour(LookAndFeel::getDefaultLookAndFeel().findColour (ResizableWindow::backgroundColourId));
     topWindow->setResizable(true, true);
     topWindow->setUsingNativeTitleBar (true);
