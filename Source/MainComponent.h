@@ -17,8 +17,8 @@ class ButtonLookAndFeel : public juce::LookAndFeel_V4
         return Font ("Segoe UI Emoji", 16.0f, Font::plain);
     }
 };
-
-class StepEditorWindow : public juce::Component
+typedef std::function<void(float)> TempoChangedCallback;
+class StepEditorWindow : public juce::Component, public juce::Slider::Listener
 {
 public:
     StepEditorWindow(EngineAudioSource& source)
@@ -34,9 +34,19 @@ public:
         stepConfirmButton.onClick = [this] {confirmButtonClicked();};
         
         
-        stepBarInput.setText("1");
+        stepBarInput.setText("1", juce::dontSendNotification);
         stepBarInput.setInputRestrictions(2,"0123456789");
         stepBarInput.onTextChange = [this] {stepCountChanged();};
+        
+        
+        addAndMakeVisible(tempoSlider);
+        tempoSlider.setRange(40.0, 200.0, 0.1);
+        tempoSlider.setTextValueSuffix(" BPM");
+        tempoSlider.addListener(this);
+        
+        addAndMakeVisible(tempoLabel);
+        tempoLabel.setText("Tempo", juce::dontSendNotification);
+        tempoLabel.attachToComponent(&tempoSlider,true);
         
         
         
@@ -68,7 +78,9 @@ public:
         addAndMakeVisible(&viewPort);
         setSize(400,600);
         configWidth = stepEditor->getWidth() - stepEditor->getPatternWidth();
-        stepInitWidth = stepEditor->getPatternWidth();;
+        stepInitWidth = stepEditor->getPatternWidth();
+        
+        tempoSlider.setValue(engineAudioSource.getStepEdit().tempoSequence.getTempos()[0]->getBpm(), juce::dontSendNotification);
 
         
     }
@@ -110,12 +122,11 @@ public:
                 {
                     if(auto clip = dynamic_cast<tracktion_engine::StepClip*>(track->getClips()[0]))
                     {
-                        clip->setPatternSequence(sequence);
-                        
                         //CREATE SAMPLER PLUGIN NEXT
                         if(auto sampler = dynamic_cast<tracktion_engine::SamplerPlugin*>(engineAudioSource.getEdit().getPluginCache().createNewPlugin(tracktion_engine::SamplerPlugin::xmlTypeName, {}).get()))
                         {
                             clip->getTrack()->pluginList.insertPlugin(*sampler, 0, nullptr);
+                            DBG("INSERTED PLUGIN ");
                             int channelCount = 0;
                             
                             for(auto channel : clip->getChannels())
@@ -125,6 +136,7 @@ public:
                                 jassert(error.isEmpty());
                                 
                                 clip->insertPattern(stepClip->getPattern(channel->getIndex()),channel->getIndex());
+
                                 
     
                             }
@@ -166,7 +178,7 @@ public:
                     auto newStepWidth  = (stepInitWidth * barCount) + configWidth; //Change this so it varies per bars
                     auto windowWidth = ((stepInitWidth * 2) + configWidth) + diffSpace;
                     stepEditor->setBounds(10, 70, newStepWidth, 300);
-                    setSize(windowWidth,600);
+                    setSize(windowWidth,600);//Prolly dont need to call this multiple times
                     resized();
 
                     
@@ -183,12 +195,43 @@ public:
         }
 
     }
+    void setTempo(float tempo)
+    {
+        
+        if(! ModifierKeys::getCurrentModifiers().isAnyMouseButtonDown())
+        {
+            engineAudioSource.getStepEdit().tempoSequence.getTempos()[0]->setBpm(tempo);
+            tempoSlider.setValue(tempo, juce::dontSendNotification);
+        }
+    }
+    
+    void setTempoChangedCallback(TempoChangedCallback cb)
+    {
+        onTempoChanged = cb;
+    }
+    void sliderValueChanged (Slider *slider) override
+    {
+        
+        if(! ModifierKeys::getCurrentModifiers().isAnyMouseButtonDown())
+        {
+            engineAudioSource.getStepEdit().tempoSequence.getTempos()[0]->setBpm(tempoSlider.getValue());
+            onTempoChanged(tempoSlider.getValue());
+        }
+    }
+    void sliderDragEnded (Slider*) override
+    {
+        
+        engineAudioSource.getStepEdit().tempoSequence.getTempos()[0]->setBpm(tempoSlider.getValue());
+        onTempoChanged(tempoSlider.getValue());
+        
+    }
+    
     
     void paint(Graphics&) override
     {
         
     }
-    
+
     void resized()override
     {
         juce::FlexBox stepAudioControlFb;
@@ -213,7 +256,7 @@ public:
             DBG("STEP RESIZE FALSE");
             stepEditor->setBounds(10, 70, getWidth() - 20, 300);
         }
-        
+        tempoSlider.setBounds(50, 400, getWidth() - 50, 20);
     }
     
     
@@ -237,6 +280,7 @@ private:
     juce::String stepBarCount;
     
     juce::Slider tempoSlider;
+    juce::Label tempoLabel;
     
     std::unique_ptr<StepEditor> stepEditor;
     
@@ -252,7 +296,9 @@ private:
     int stepInitWidth;
     int configWidth;
     
-    int barCount;
+    int barCount = 1;
+    
+    TempoChangedCallback onTempoChanged;
     
     
     tracktion_engine::StepClip::Ptr createStepClip()
@@ -348,7 +394,7 @@ private:
 
 
 
-class MainComponent  : public juce::AudioAppComponent, public juce::Timer, public juce::ChangeListener, public juce::MidiInputCallback, public juce::MidiKeyboardStateListener
+class MainComponent  : public juce::AudioAppComponent, public juce::Timer, public juce::ChangeListener, public juce::MidiInputCallback, public juce::MidiKeyboardStateListener, public juce::Slider::Listener
 {
 public:
     //==============================================================================
@@ -413,6 +459,9 @@ public:
     void processMidiClip(tracktion_engine::MidiClip & midiClip);
     
     void showStepSequencer();
+    //========================================================================================================
+    void sliderValueChanged(Slider * ) override;
+    void sliderDragEnded(Slider *) override;
 
 private:
     //==============================================================================
@@ -456,6 +505,9 @@ private:
     juce::TextButton openButton {"open"};
     juce::TextButton deleteButton {L"\u274C"};
     
+    juce::Slider tempoSlider;
+    juce::Label tempoLabel;
+    
     tracktion_engine::VirtualMidiInputDevice * virtualMidi;
     
     
@@ -487,6 +539,9 @@ private:
     StepEditorWindow stepWindow;
     
     juce::ResizableWindow* topWindow;
+    
+    
+    
     
     
     //========================================================================

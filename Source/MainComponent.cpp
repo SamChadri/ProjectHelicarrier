@@ -17,6 +17,18 @@ MainComponent::MainComponent()
     //audioMixer.addInputSource(&transportSource, true);
     audioMixer.addInputSource(&engineAudioSource, true);
     
+    //========================================================================
+    
+    addAndMakeVisible(tempoSlider);
+    tempoSlider.setRange(40.0, 200.0, 0.1);
+    tempoSlider.setTextValueSuffix(" BPM");
+
+    tempoSlider.addListener(this);
+    
+    addAndMakeVisible(tempoLabel);
+    tempoLabel.setText("Tempo", juce::dontSendNotification);
+    tempoLabel.attachToComponent(&tempoSlider,true );
+    
     
     //========================================================================
 
@@ -165,12 +177,18 @@ MainComponent::MainComponent()
     addAndMakeVisible(tempoSlider);
     addAndMakeVisible(stepEditor.get());
     */
+    tempoSlider.setValue(engineAudioSource.getEdit().tempoSequence.getTempos()[0]->getBpm(), juce::dontSendNotification);
     
     stepWindow.initalise();
+    stepWindow.setTempoChangedCallback([this] (float floatValue)
+    {
+        engineAudioSource.getEdit().tempoSequence.getTempos()[0]->setBpm(floatValue);
+        tempoSlider.setValue(floatValue, juce::dontSendNotification);
+    });
     //showStepSequencer();
     
     
-    setSize (800, 500);
+    setSize (800, 600);
     startTimer(400);
     
 
@@ -621,7 +639,7 @@ void MainComponent::deleteButtonClicked()
     }
 }
 
-//=======================STEP-SEQUENCER-FUNCTIONS=============================
+//==================================STEP-SEQUENCER-FUNCTIONS=================================================
 tracktion_engine::StepClip::Ptr MainComponent::getClip()
 {
     
@@ -728,6 +746,26 @@ void MainComponent::showStepSequencer()
     */
     resized();
 }
+//=========================================SLIDER-FUNCTIONS===================================================
+
+void MainComponent::sliderValueChanged(Slider * slider)
+{
+    
+    if(! ModifierKeys::getCurrentModifiers().isAnyMouseButtonDown())
+    {
+        engineAudioSource.getEdit().tempoSequence.getTempos()[0]->setBpm(tempoSlider.getValue());
+        stepWindow.setTempo(tempoSlider.getValue());
+    }
+}
+
+void MainComponent::sliderDragEnded(Slider * slider)
+{
+    
+    engineAudioSource.getEdit().tempoSequence.getTempos()[0]->setBpm(tempoSlider.getValue());
+    stepWindow.setTempo(tempoSlider.getValue());
+    
+}
+
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
@@ -835,7 +873,9 @@ void MainComponent::resized()
     audioControlFb.items.add(juce::FlexItem (recordButton).withMinWidth(50.0f).withMinHeight(25.0f).withMargin(juce::FlexItem::Margin(5.0f))
                  );
     
+    //audioControlFb.items.add(juce::FlexItem(tempoSlider).withMinWidth(500.0f).withMinHeight(20.0f).withMargin(juce::FlexItem::Margin(2.0f,2.0f,2.0f,50.0f)));
     
+    //tempoSlider.setBounds(getLocalBounds().removeFromBottom(60).reduced(2));
     audioControlFb.performLayout (getLocalBounds().removeFromTop(100));
     managementControlFb.performLayout(getLocalBounds().removeFromTop(150));
     auto buttonWidth = getWidth() - 100;
@@ -843,9 +883,10 @@ void MainComponent::resized()
     openButton.setBounds(xPos, 5, getWidth() - 100, 20);
     //playButton.setBounds(xPos, 50, 100, 20);
     //stopButton.setBounds(xPos, 50,getWidth() - 100, 20);
-    synthList.setBounds(200, 310, getWidth() - 210, 20);
-    midiInputList.setBounds (200, 340, getWidth() - 210, 20);
-    keyboardComponent->setBounds (10,  370, getWidth() - 20, 100);
+    tempoSlider.setBounds(50, 310, getWidth() - 50, 20);
+    synthList.setBounds(200, 350, getWidth() - 210, 20);
+    midiInputList.setBounds (200, 380, getWidth() - 210, 20);
+    keyboardComponent->setBounds (10,  410, getWidth() - 20, 100);
     
     if (editComponent != nullptr){
         editComponent->setBounds (20,  100, getWidth() - 20, 200);
