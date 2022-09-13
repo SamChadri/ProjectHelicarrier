@@ -17,6 +17,8 @@
       </GROUP>
     </GROUP>
     <GROUP id="{B75C724D-D118-CD5D-3E53-E16B72BA36D1}" name="Source">
+      <FILE id="NvWil1" name="Data.h" compile="0" resource="0" file="Source/Data.h"/>
+      <FILE id="yULaoS" name="Metronome.h" compile="0" resource="0" file="Source/Metronome.h"/>
       <FILE id="adxGQf" name="StepEditor.h" compile="0" resource="0" file="Source/StepEditor.h"/>
       <FILE id="dBp5aU" name="EngineAudioSource.h" compile="0" resource="0"
             file="Source/EngineAudioSource.h"/>

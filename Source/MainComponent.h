@@ -5,6 +5,7 @@
 #include "EngineAudioSource.h"
 #include "../includes/common/Components.h"
 #include "StepEditor.h"
+#include "Metronome.h"
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -532,6 +533,8 @@ private:
     
     TransportState playState {TransportState::Stopped};
     
+    
+    Metronome metronome;
     
     //========================================================================
     

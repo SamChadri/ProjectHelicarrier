@@ -16,6 +16,7 @@ MainComponent::MainComponent()
     //========================================================================
     //audioMixer.addInputSource(&transportSource, true);
     audioMixer.addInputSource(&engineAudioSource, true);
+    audioMixer.addInputSource(&metronome, true);
     
     //========================================================================
     
@@ -532,6 +533,7 @@ void MainComponent::playButtonClicked()
         edit.getTransport().play(false);
         transportSource.start();
         playState = TransportState::Playing;
+        metronome.setTransportState(Metronome::TransportState::Playing);
         DBG("Playing transport...:");
 
     }
@@ -553,6 +555,7 @@ void MainComponent::stopButtonClicked()
         
         transportSource.stop();
         playState = TransportState::Stopped;
+        metronome.setTransportState(Metronome::TransportState::Stopped);
         DBG("Stopping trasport...");
     }
 }

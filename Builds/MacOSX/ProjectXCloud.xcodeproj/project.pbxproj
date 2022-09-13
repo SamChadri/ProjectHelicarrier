@@ -57,6 +57,7 @@
 		095AA77AA027CA7F5C3C60C0 /* tracktion_engine */ /* tracktion_engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tracktion_engine; path = ../../../libraries/tracktion_engine/modules/tracktion_engine; sourceTree = SOURCE_ROOT; };
 		0A379CC402F86B24A089934A /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = /Applications/JUCE/modules/juce_audio_processors; sourceTree = "<absolute>"; };
 		0B078B566B32FDABEBCDA2A6 /* BinaryData.cpp */ /* BinaryData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryData.cpp; path = ../../includes/common/BinaryData.cpp; sourceTree = SOURCE_ROOT; };
+		0E3B36589E832738213E4FA7 /* Data.h */ /* Data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Data.h; path = ../../Source/Data.h; sourceTree = SOURCE_ROOT; };
 		12FEF4314567C0C443B0D07A /* include_tracktion_engine_utils.cpp */ /* include_tracktion_engine_utils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_utils.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_utils.cpp; sourceTree = SOURCE_ROOT; };
 		13E04A591A82573C03238C1C /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = /Applications/JUCE/modules/juce_audio_devices; sourceTree = "<absolute>"; };
 		14069D235120475D8AD57F03 /* EngineAudioSource.h */ /* EngineAudioSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = EngineAudioSource.h; path = ../../Source/EngineAudioSource.h; sourceTree = SOURCE_ROOT; };
@@ -103,6 +104,7 @@
 		B56CED175AE45BF04214F1D7 /* Main.cpp */ /* Main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Main.cpp; path = ../../Source/Main.cpp; sourceTree = SOURCE_ROOT; };
 		B671D460352EB75FEB5C17E2 /* include_tracktion_engine_timestretch.cpp */ /* include_tracktion_engine_timestretch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_timestretch.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_timestretch.cpp; sourceTree = SOURCE_ROOT; };
 		B699261F7FA4F21B9B53D494 /* EngineAudioSource.cpp */ /* EngineAudioSource.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = EngineAudioSource.cpp; path = ../../Source/EngineAudioSource.cpp; sourceTree = SOURCE_ROOT; };
+		B71673BC136788C3B6DD14BF /* Metronome.h */ /* Metronome.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Metronome.h; path = ../../Source/Metronome.h; sourceTree = SOURCE_ROOT; };
 		B7FCCA3E6399DA3CA7820056 /* include_tracktion_graph.cpp */ /* include_tracktion_graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_graph.cpp; path = ../../JuceLibraryCode/include_tracktion_graph.cpp; sourceTree = SOURCE_ROOT; };
 		B7FFF195C5C8AFBF9837CA98 /* include_tracktion_engine_model_1.cpp */ /* include_tracktion_engine_model_1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_tracktion_engine_model_1.cpp; path = ../../JuceLibraryCode/include_tracktion_engine_model_1.cpp; sourceTree = SOURCE_ROOT; };
 		BB0999DAD397BBFFB5FB6242 /* Components.h */ /* Components.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Components.h; path = ../../includes/common/Components.h; sourceTree = SOURCE_ROOT; };
@@ -206,6 +208,8 @@
 		BFE9D746A7CA009D12563839 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				0E3B36589E832738213E4FA7,
+				B71673BC136788C3B6DD14BF,
 				74943BBC4FAEDE0E60AFF19A,
 				14069D235120475D8AD57F03,
 				B699261F7FA4F21B9B53D494,
