@@ -14,8 +14,8 @@
             filePath = "../../Source/Metronome.h"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "223"
-            endingLineNumber = "223"
+            startingLineNumber = "328"
+            endingLineNumber = "328"
             landmarkName = "addMessageToBuffer(sampleBlock)"
             landmarkType = "7">
          </BreakpointContent>
