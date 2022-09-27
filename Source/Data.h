@@ -11,7 +11,128 @@
 #pragma once
 
 #include <JuceHeader.h>
-//=========================THIS WILL BECOME THE NEW SYNTH CLASS LATER ON=====================================
+
+class CustomOscillator
+{
+public:
+    //==============================================================================
+    CustomOscillator()
+    {
+        setWaveform (Waveform::sine);
+
+        auto& gain = processorChain.template get<gainIndex>();
+        gain.setRampDurationSeconds (3e-2);
+        gain.setGainLinear ((0));
+        
+
+    }
+
+    //==============================================================================
+    enum class Waveform
+    {
+        sine,
+        saw,
+        square,
+        triangle
+    };
+
+    void setWaveform (Waveform waveform)
+    {
+        switch (waveform)
+        {
+        case Waveform::sine:
+            processorChain.template get<oscIndex>().initialise ([] (float x)
+            {
+               return std::sin (x);
+            }, 128);
+            break;
+
+        case Waveform::saw:
+            processorChain.template get<oscIndex>().initialise ([] (float x)
+            {
+               return juce::jmap (x,
+                                  float (-juce::MathConstants<double>::pi),
+                                  float (juce::MathConstants<double>::pi),
+                                  float (-1),
+                                  float (1));
+            }, 128);
+            break;
+        case Waveform::triangle:
+            processorChain.template get<oscIndex>().initialise ([] (float x)
+            {
+                return std::abs((int)x % 2);
+            }, 128);
+            break;
+        case Waveform::square:
+            processorChain.template get<oscIndex>().initialise ([] (float x)
+            {
+                return  x < 0.0f ? 1.0f: -1.0f;;
+            }, 128);
+            break;
+
+        default:
+            jassertfalse;
+            break;
+        }
+    }
+
+    //==============================================================================
+    void setFrequency (int newValue, bool force = false)
+    {
+        processorChain.template get<oscIndex>().setFrequency (juce::MidiMessage::getMidiNoteInHertz(newValue), force);
+    }
+
+    void setLevel (float newValue)
+    {
+        processorChain.template get<gainIndex>().setGainLinear (newValue);
+    }
+
+    void reset() noexcept
+    {
+        processorChain.reset();
+    }
+
+    //==============================================================================
+    template <typename ProcessContext>
+    void process (const ProcessContext& context) noexcept
+    {
+        auto&& outBlock = context.getOutputBlock();
+        auto blockToUse = tempBlock.getSubBlock (0, outBlock.getNumSamples());
+        juce::dsp::ProcessContextReplacing<float> tempContext (blockToUse);
+        processorChain.process (tempContext);
+
+        outBlock.copyFrom (context.getInputBlock()).add (blockToUse);
+    }
+
+    //==============================================================================
+    void prepare (const juce::dsp::ProcessSpec& spec)
+    {
+        tempBlock = juce::dsp::AudioBlock<float> (heapBlock, spec.numChannels, spec.maximumBlockSize);
+        processorChain.prepare (spec);
+    }
+
+private:
+    //==============================================================================
+    juce::HeapBlock<char> heapBlock;
+    juce::dsp::AudioBlock<float> tempBlock;
+
+    enum
+    {
+        oscIndex,
+        gainIndex,
+    };
+
+    juce::dsp::ProcessorChain<juce::dsp::Oscillator<float>, juce::dsp::Gain<float>> processorChain;
+};
+
+class Distortion
+{
+public:
+
+private:
+    
+};
+
 class OscData: public juce::dsp::Oscillator<float>
 {
 public:
@@ -19,6 +140,11 @@ public:
     {
         prepare(spec);
         fmOsc.prepare(spec);
+        processorChain.template get<0>().prepare(spec);
+        processorChain.template get<0>().initialise ([] (float x)
+        {
+           return std::sin (x);
+        }, 128);
     }
     
     void setWaveType (const int choice)
@@ -46,14 +172,18 @@ public:
     
     void setWaveFrequency (const int midiNoteNumber)
     {
-        setFrequency(juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber) + fmMod);
+        setFrequency(juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber));
+        fmOsc.setFrequency(juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber));
+        processorChain.template get<0>().setFrequency(juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber));
         lastMidiNote = midiNoteNumber;
         
     }
     
     void getNextAudioBlock (juce::dsp::AudioBlock<float>& block)
     {
-        processFmOsc (block);
+        //processFmOsc (block);
+        //fmOsc.process(juce::dsp::ProcessContextReplacing<float>(block));
+        //processorChain.process (juce::dsp::ProcessContextReplacing<float>(block));
         process (juce::dsp::ProcessContextReplacing<float> (block));
     }
     
@@ -72,12 +202,12 @@ public:
         fmOsc.setFrequency(freq);
         fmDepth = depth;
         auto currentFreq = juce::MidiMessage::getMidiNoteInHertz(lastMidiNote) + fmMod;
-        setFrequency(currentFreq >= 0 ? currentFreq : currentFreq * -1.0f);
+        setFrequency(currentFreq);
     }
     
 private:
     juce::dsp::Oscillator<float> fmOsc { [](float x) { return std::sin (x); } };
-    
+    juce::dsp::ProcessorChain<juce::dsp::Oscillator<float>, juce::dsp::Gain<float>> processorChain;
     float fmMod {0.0f};
     float fmDepth {0.0f};
     float lastMidiNote {0};
@@ -150,6 +280,11 @@ public:
         
         filter.setCutoffFrequency(modulatedFreq);
         filter.setResonance(resonance);
+    }
+    
+    void setCutOffFrequency( float frequency)
+    {
+        filter.setCutoffFrequency(frequency);
     }
     
     void reset()

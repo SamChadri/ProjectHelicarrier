@@ -26,7 +26,11 @@ struct MetronomeSound: public juce::SynthesiserSound
 struct MetronomeVoice: public juce::SynthesiserVoice
 {
 public:
-    MetronomeVoice(){}
+    MetronomeVoice()
+    {
+        lfo.initialise ([](float x) {return std::sin (x);});
+        lfo.setFrequency (3.0f);
+    }
     
     bool canPlaySound(juce::SynthesiserSound* sound) override
     {
@@ -42,12 +46,24 @@ public:
         spec.numChannels = outputChannels;
         
         osc.prepareToPlay(spec);
+        
+        cOsc.prepare(spec);
+        
+        lfo.prepare ({ spec.sampleRate / lfoDownsamplingRatio, spec.maximumBlockSize, 1 });
+
+        
+        auto waveform = CustomOscillator::Waveform::sine;
+        cOsc.setWaveform(waveform);
+        //cOsc.setLevel(0.3f);
+        
         filterAdsr.setSampleRate(sampleRate);
         filter.prepareToPlay(sampleRate, samplesPerBlock, outputChannels);
         adsr.setSampleRate(sampleRate);
         gain.prepare(spec);
         
         gain.setGainLinear(0.3f);
+        
+        
         
         isPrepared = true;
         
@@ -66,6 +82,8 @@ public:
         */
         
         osc.setWaveFrequency(midiNoteNumber);
+        cOsc.setFrequency(midiNoteNumber, true);
+        cOsc.setLevel(velocity);
         adsr.noteOn();
         filterAdsr.noteOn();
         
@@ -82,22 +100,35 @@ public:
         synthBuffer.clear();
             
         juce::dsp::AudioBlock<float> audioBlock { synthBuffer };
-        osc.getNextAudioBlock (audioBlock);
+        //osc.getNextAudioBlock (audioBlock);
+        cOsc.process(juce::dsp::ProcessContextReplacing<float>(audioBlock));
         //audioBlock.copyTo(synthBuffer);
-        adsr.applyEnvelopeToBuffer (synthBuffer, 0, synthBuffer.getNumSamples());
+        //adsr.applyEnvelopeToBuffer (synthBuffer, 0, synthBuffer.getNumSamples());
         filter.process (synthBuffer);
-        gain.process (juce::dsp::ProcessContextReplacing<float> (audioBlock));
+        //gain.process (juce::dsp::ProcessContextReplacing<float> (audioBlock));
+        
+        for(int i = 0; i < numSamples; i++)
+        {
+            if (--lfoProcessingIndex == 0)
+            {
+                auto lfoOut = lfo.processSample (0.0f);
+                auto cutOffHz = juce::jmap (lfoOut, -1.0f, 1.0f, 100.0f, 4e3f);
+                filter.setCutOffFrequency(cutOffHz);
+                
+            }
+        }
         
         for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
         {
-           // outputBuffer.addFrom (channel, startSample, synthBuffer, channel, 0, numSamples);
-            
-            if (! adsr.isActive())
-                clearCurrentNote();
+            outputBuffer.addFrom (channel, startSample, synthBuffer, channel, 0, numSamples);
+        
+            //if (! adsr.isActive())
+                //clearCurrentNote();
         }
+        /*
         juce::dsp::AudioBlock<float> (outputBuffer)
             .getSubBlock ((size_t) startSample, (size_t) numSamples)
-            .add (audioBlock);
+            .add (audioBlock);*/
         /*
         if(angleDelta != 0.0)
         {
@@ -163,6 +194,7 @@ public:
         
         adsr.noteOff();
         filterAdsr.noteOff();
+        cOsc.setLevel(0.0f);
         
         if(! allowTailOff || ! adsr.isActive())
             clearCurrentNote();
@@ -200,7 +232,13 @@ private:
     AdsrData adsr;
     AdsrData filterAdsr;
     FilterData filter;
+    CustomOscillator cOsc;
     juce::dsp::Gain<float> gain;
+    
+    juce::dsp::Oscillator<float> lfo;
+    static constexpr size_t lfoDownsamplingRatio = 128;
+    size_t lfoProcessingIndex = lfoDownsamplingRatio;
+    
     
     bool isPrepared {false};
     
@@ -224,6 +262,44 @@ public:
         }
         
         synth.addSound(new MetronomeSound());
+        
+        for(int i = 0; i < synth.getNumVoices(); i++)
+        {
+            if (auto voice = dynamic_cast<MetronomeVoice*>(synth.getVoice(i)))
+            {
+                // Osc
+                auto& oscWaveChoice = *parameters.getRawParameterValue ("OSC1WAVETYPE");
+                
+                // FM
+                auto& fmFreq = *parameters.getRawParameterValue ("OSC1FMFREQ");
+                auto& fmDepth = *parameters.getRawParameterValue ("OSC1FMDEPTH");
+                
+                // Amp Adsr
+                auto& attack = *parameters.getRawParameterValue ("ATTACK");
+                auto& decay = *parameters.getRawParameterValue ("DECAY");
+                auto& sustain = *parameters.getRawParameterValue ("SUSTAIN");
+                auto& release = *parameters.getRawParameterValue ("RELEASE");
+                
+                // Filter Adsr
+                auto& fAttack = *parameters.getRawParameterValue ("FILTERATTACK");
+                auto& fDecay = *parameters.getRawParameterValue ("FILTERDECAY");
+                auto& fSustain = *parameters.getRawParameterValue ("FILTERSUSTAIN");
+                auto& fRelease = *parameters.getRawParameterValue ("FILTERRELEASE");
+                
+                // Filter
+                auto& filterType = *parameters.getRawParameterValue ("FILTERTYPE");
+                auto& cutoff = *parameters.getRawParameterValue ("FILTERFREQ");
+                auto& resonance = *parameters.getRawParameterValue ("FILTERRES");
+                
+                // Update voice
+                
+                voice->getOscillator().setWaveType (oscWaveChoice);
+                voice->getOscillator().updateFm (fmFreq, fmDepth);
+                voice->getAdsr().update (attack.load(), decay.load(), sustain.load(), release.load());
+                voice->getFilterAdsr().update (fAttack.load(), fDecay.load(), fSustain.load(), fRelease.load());
+                voice->updateFilter (filterType, cutoff, resonance);
+            }
+        }
     }
     
     ~Metronome()
@@ -251,6 +327,7 @@ public:
     
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override
     {
+        DBG("PREPARE TO PLAY CALLED");
         for (int i = 0; i < synth.getNumVoices(); i++)
         {
             if (auto voice = dynamic_cast<MetronomeVoice*>(synth.getVoice(i)))
@@ -274,7 +351,7 @@ public:
             DBG("BEAT NUMBER : " << totalBeatNum);
             double time = juce::Time::getMillisecondCounterHiRes() * 0.001 - startTime;
             DBG("TOTAL SAMPLES: " << totalSamples);
-            MidiMessage mOn = MidiMessage::noteOn(1, 72, .3f);
+            MidiMessage mOn = MidiMessage::noteOn(1, 60, 1.0f);
             auto timestamp = (int) time * mSampleRate;
             DBG("TIMESTAMP MON: " << timestamp);
             mOn.setTimeStamp(timestamp);
@@ -284,11 +361,11 @@ public:
 
             noteCounter++;
             
-            MidiMessage mOff = MidiMessage::noteOff(1,72, .3f);
+            MidiMessage mOff = MidiMessage::noteOff(1,60, 1.0f);
             timestamp = (int) (time + (1/8))* (mSampleRate);
             mOff.setTimeStamp(timestamp);
             metroNotes.push_back(mOff);
-            auto noteOffTime = totalSamples + ((int) mSampleRate/8);
+            auto noteOffTime = totalSamples + ((int) mSampleRate/10);
             //midiCollector.addMessageToQueue(mOff);
             metroTimes.push_back(noteOffTime);
             noteCounter++;
@@ -339,6 +416,10 @@ public:
     void setTransportState(TransportState state)
     {
         currState = state;
+        if(currState == TransportState::Stopped)
+        {
+            synth.allNotesOff(1,false);
+        }
     }
     
     void releaseResources() override
@@ -358,55 +439,23 @@ public:
                 addMessageToBuffer(bufferToFill.numSamples);
 
         }
-        for(int i = 0; i < synth.getNumVoices(); i++)
-        {
-            if (auto voice = dynamic_cast<MetronomeVoice*>(synth.getVoice(i)))
-            {
-                // Osc
-                auto& oscWaveChoice = *parameters.getRawParameterValue ("OSC1WAVETYPE");
-                
-                // FM
-                auto& fmFreq = *parameters.getRawParameterValue ("OSC1FMFREQ");
-                auto& fmDepth = *parameters.getRawParameterValue ("OSC1FMDEPTH");
-                
-                // Amp Adsr
-                auto& attack = *parameters.getRawParameterValue ("ATTACK");
-                auto& decay = *parameters.getRawParameterValue ("DECAY");
-                auto& sustain = *parameters.getRawParameterValue ("SUSTAIN");
-                auto& release = *parameters.getRawParameterValue ("RELEASE");
-                
-                // Filter Adsr
-                auto& fAttack = *parameters.getRawParameterValue ("FILTERATTACK");
-                auto& fDecay = *parameters.getRawParameterValue ("FILTERDECAY");
-                auto& fSustain = *parameters.getRawParameterValue ("FILTERSUSTAIN");
-                auto& fRelease = *parameters.getRawParameterValue ("FILTERRELEASE");
-                
-                // Filter
-                auto& filterType = *parameters.getRawParameterValue ("FILTERTYPE");
-                auto& cutoff = *parameters.getRawParameterValue ("FILTERFREQ");
-                auto& resonance = *parameters.getRawParameterValue ("FILTERRES");
-                
-                // Update voice
-                
-                voice->getOscillator().setWaveType (oscWaveChoice);
-                voice->getOscillator().updateFm (fmFreq, fmDepth);
-                voice->getAdsr().update (attack.load(), decay.load(), sustain.load(), release.load());
-                voice->getFilterAdsr().update (fAttack.load(), fDecay.load(), fSustain.load(), fRelease.load());
-                voice->updateFilter (filterType, cutoff, resonance);
-            }
-        }
+
+        
+
         
 
         
         midiCollector.removeNextBlockOfMessages(incomingMidi, bufferToFill.numSamples);
         //processBlock(*bufferToFill.buffer, incomingMidi);
         synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, bufferToFill.startSample, bufferToFill.numSamples);
+        
     }
     void processBlock (AudioBuffer< float > &buffer, MidiBuffer &midiMessages) override
     {
+        buffer.clear();
+        incomingMidi.clear();
 
-        
-        //synth.renderNextBlock(buffer, incomingMidi, 0, buffer.getNumSamples());
+        synth.renderNextBlock(buffer, incomingMidi, 0, buffer.getNumSamples());
     }
     
     void hiResTimerCallback() override
@@ -424,7 +473,7 @@ public:
         params.push_back (std::make_unique<juce::AudioParameterChoice>("OSC1WAVETYPE", "Osc 1 Wave Type", juce::StringArray { "Sine", "Saw", "Square" }, 0));
         
         // FM
-        params.push_back (std::make_unique<juce::AudioParameterFloat>("OSC1FMFREQ", "Osc 1 FM Frequency", juce::NormalisableRange<float> { 0.0f, 1000.0f, 0.01f, 0.3f }, 0.0f));
+        params.push_back (std::make_unique<juce::AudioParameterFloat>("OSC1FMFREQ", "Osc 1 FM Frequency", juce::NormalisableRange<float> { 0.0f, 1000.0f, 0.01f, 0.3f }, 55.f));
         params.push_back (std::make_unique<juce::AudioParameterFloat>("OSC1FMDEPTH", "Osc 1 FM Depth", juce::NormalisableRange<float> { 0.0f, 1000.0f, 0.01f, 0.3f }, 0.0f));
         
         // ADSR
@@ -440,7 +489,7 @@ public:
         params.push_back (std::make_unique<juce::AudioParameterFloat>("FILTERRELEASE", "Filter Release", juce::NormalisableRange<float> { 0.1f, 3.0f, 0.1f }, 0.4f));
         
         // Filter
-        params.push_back (std::make_unique<juce::AudioParameterChoice>("FILTERTYPE", "Filter Type", juce::StringArray { "Low-Pass", "Band-Pass", "High-Pass" }, 0));
+        params.push_back (std::make_unique<juce::AudioParameterChoice>("FILTERTYPE", "Filter Type", juce::StringArray { "Low-Pass", "Band-Pass", "High-Pass" }, 1));
         params.push_back (std::make_unique<juce::AudioParameterFloat>("FILTERFREQ", "Filter Freq", juce::NormalisableRange<float> { 20.0f, 20000.0f, 0.1f, 0.6f }, 200.0f));
         params.push_back (std::make_unique<juce::AudioParameterFloat>("FILTERRES", "Filter Resonance", juce::NormalisableRange<float> { 1.0f, 10.0f, 0.1f }, 1.0f));
         
